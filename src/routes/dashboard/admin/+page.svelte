@@ -1,14 +1,12 @@
 <script>
-  import { auth } from '../../stores/authStore.js';
+  import { auth } from '../../../stores/authStore.js';
   import { onMount } from 'svelte';
-  import ProfileCard from '../../components/ProfileCard.svelte';
-  import StatCard from '../../components/StatCard.svelte';
   import { createEventDispatcher } from 'svelte';
-  import { theme } from '../../themeStore.js';
-  import ThemeToggle from '../../components/ThemeToggle.svelte';
+  import { theme } from '../../../themeStore.js';
   import { goto } from '$app/navigation';
-  import { API_BASE } from '../../config.js';
-  import { fetchMessage } from '../../utils/fetchMessage.js';
+  import { API_BASE } from '../../../config.js';
+  import { authFetch } from '../../../authFetch.js';
+  import { browser } from '$app/environment';
 
   const dispatch = createEventDispatcher();
   let token = '';
@@ -18,15 +16,16 @@
   let adminData = null;
   let error = '';
 
-  // Tab menü logika
-  let activeTab = 'checkpoint';
-  const tabs = [
-    { key: 'checkpoint', label: 'Checkpoint' },
-    { key: 'monthly', label: 'Havi munka' },
-    { key: 'schedule', label: 'Beosztás' },
-    { key: 'report', label: 'Kimutatás' },
-    { key: 'dashboard', label: 'Vezérlőpult' }
-  ];
+  // Felső kártya státusz
+  let adminCardStatus = '';
+  let adminCardStatusLoading = false;
+  let adminCardStatusError = '';
+
+  // Auth store szinkronizáció
+  const unsubscribe = auth.subscribe((state) => {
+    token = state.token;
+    userRole = state.userRole;
+  });
 
   // Új változók a checkpoint lekérdezéshez
   let selectedYear = '2025';
@@ -80,40 +79,25 @@
   let updateCheckpointMessage = '';
   let updateCheckpointError = '';
 
-  // Felső kártya státusz
-  let adminCardStatus = '';
-  let adminCardStatusLoading = false;
-  let adminCardStatusError = '';
-
-  // Auth store szinkronizáció
-  const unsubscribe = auth.subscribe((state) => {
-    token = state.token;
-    userRole = state.userRole;
-    EmployeeId = state.EmployeeId;
-  });
-
-  // Jogosultság ellenőrzés csak adminnak
-  $: {
-    if (!token || !userRole) {
-      goto('/');
-    } else if (userRole.toLowerCase() !== 'admin') {
-      if (userRole.toLowerCase() === 'employee') {
-        goto('/employee');
+  // Jogosultság ellenőrzés és adatlekérés csak böngészőben, onMount-ban!
+  onMount(() => {
+    if (!token || !userRole || userRole.toLowerCase() !== 'admin') {
+      if (!token || !userRole) {
+        goto('/');
+      } else if (userRole.toLowerCase() === 'employee') {
+        goto('/dashboard/employee');
       } else if (userRole.toLowerCase() === 'manager') {
-        goto('/manager');
+        goto('/dashboard/manager');
       } else {
         goto('/');
       }
+    } else {
+      fetchAdminData();
+      if (EmployeeId) {
+        fetchAdminCardStatus(EmployeeId);
+      }
     }
-  }
-
-  // Adatok lekérése, ha van token és a szerepkör admin
-  $: if (token && userRole && userRole.toLowerCase() === 'admin') {
-    fetchAdminData();
-    if (EmployeeId) {
-      fetchAdminCardStatus(EmployeeId);
-    }
-  }
+  });
 
   async function fetchAdminData() {
     if (!token || !EmployeeId) return;
@@ -239,167 +223,10 @@
   }
 </script>
 
-<main class="admin-layout">
-  <header class="admin-header">
-    <ProfileCard
-      fullName={adminData ? adminData.fullName : ''}
-      userRole="Admin"
-      username={adminData ? adminData.username : ''}
-      sessionStatus={adminData ? adminData.sessionStatus : ''}
-    />
-    {#if error}
-      <div class="error">{error}</div>
-    {/if}
-    <div class="admin-header-center">
-      <StatCard label="Ledolgozott munkanapok" value="12/20" />
-    </div>
-    <div class="admin-header-actions">
-      <button class="main-btn logout-btn" on:click={handleLogout}>Kijelentkezés</button>
-    </div>
-  </header>
-  <!-- Tab navigáció -->
-  <nav class="admin-tabs">
-    {#each tabs as tab}
-      <button
-        class="admin-tab-btn"
-        class:active={activeTab === tab.key}
-        type="button"
-        on:click={() => activeTab = tab.key}>
-        {tab.label}
-      </button>
-    {/each}
-  </nav>
-  <section class="admin-content">
-    {#if activeTab === 'checkpoint'}
-      <section class="admin-checkpoint-section" style="margin-top: 0;">
-        <div class="checkpoint-filters checkpoint-filters-column">
-          <div class="checkpoint-group">
-            <label for="year">Év:</label>
-            <select id="year" bind:value={selectedYear}>
-              {#each years as year}
-                <option value={year}>{year}</option>
-              {/each}
-            </select>
-            <label for="month">Hónap:</label>
-            <select id="month" bind:value={selectedMonth}>
-              {#each months as month}
-                <option value={month}>{month}</option>
-              {/each}
-            </select>
-            <button class="main-btn" type="button" on:click={() => fetchCheckpointsByMonth(selectedYear, selectedMonth)} disabled={checkpointsLoading}>
-              {#if checkpointsLoading}Lekérés...{:else}Havi lekérés{/if}
-            </button>
-          </div>
-        </div>
-        <!-- Checkpoint lista -->
-        {#if checkpointsLoading}
-          <div>Betöltés...</div>
-        {:else if checkpointsError}
-          <div class="error">{checkpointsError}</div>
-        {:else if checkpoints.length > 0}
-          <table class="checkpoint-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Check-in</th>
-                <th>Check-out</th>
-              </tr>
-            </thead>
-            <tbody>
-              {#each checkpoints as cp}
-                <tr>
-                  <td>{cp.id}</td>
-                  <td>{cp.checkInTime}</td>
-                  <td>{cp.checkOutTime}</td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        {:else}
-          <div>Nincs adat.</div>
-        {/if}
-      </section>
-    {:else if activeTab === 'dashboard'}
-      <section class="admin-dashboard-section">
-        <h2>Vezérlőpult</h2>
-        <table class="admin-table">
-          <thead>
-            <!-- ... -->
-          </thead>
-        </table>
-      </section>
-    {/if}
-  </section>
-</main>
+<section>
+  <h2>Admin dashboard</h2>
+</section>
 
 <style>
-  .admin-layout {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    width: 100vw;
-  }
-  .admin-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 2rem;
-    background: #242038;
-    color: #fff;
-    gap: 2.5rem;
-  }
-  .admin-header-center {
-    display: flex;
-    flex: 1;
-    justify-content: center;
-    align-items: center;
-  }
-  .admin-header-actions {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-  }
-  .logout-btn {
-    background: #ff6b6b;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 0.5rem 1.2rem;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .logout-btn:hover {
-    background: #6c3bb8;
-  }
-  /* TABOK */
-  .admin-tabs {
-    display: flex;
-    justify-content: center;
-    gap: 1.5rem;
-    background: #181526;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid #332f4b;
-  }
-  .admin-tab-btn {
-    background: none;
-    border: none;
-    color: #bdbfff;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 0.5rem 1.2rem;
-    border-radius: 8px 8px 0 0;
-    transition: background 0.15s, color 0.15s;
-  }
-  .admin-tab-btn.active, .admin-tab-btn:hover {
-    background: #332f4b;
-    color: #fff;
-  }
-  .admin-content {
-    flex: 1;
-    padding: 2rem;
-  }
-  /* .main-btn és .theme-toggle-btn stílust ne írj felül, azokat a global.css kezeli! */
+  /* ... */
 </style>

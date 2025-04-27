@@ -1,11 +1,9 @@
 <script>
   export let label = '';
   export let value = '';
-  // value: "12/20" formátum
   $: [done, total] = value.split('/').map(Number);
   $: percent = total && done ? Math.min(100, Math.round((done / total) * 100)) : 0;
 
-  // Nagyobb kör progress bar paraméterek
   const radius = 74;
   const stroke = 14;
   const normalizedRadius = radius - stroke / 2;
@@ -54,17 +52,17 @@
     padding: 0.1rem 0.2rem 0.1rem 0.2rem;
   }
   .stat-label {
-    color: #fff;
+    color: var(--color-stat-label, #6c3bb8);
     font-size: 1.18rem;
     font-weight: 600;
     letter-spacing: 0.01em;
-    min-width: 120px;
+    min-width: 7.5rem; /* 120px */
     text-align: left;
   }
   .stat-circle-wrap {
     position: relative;
-    width: 170px;
-    height: 170px;
+    width: 10.625rem; /* 170px */
+    height: 10.625rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -88,7 +86,7 @@
     transform: translate(-50%, -53%);
     font-size: 2.5rem;
     font-weight: bold;
-    color: #7c3aed;
+    color: var(--color-stat-value, #7c3aed);
     z-index: 2;
     letter-spacing: 0.01em;
     pointer-events: none;

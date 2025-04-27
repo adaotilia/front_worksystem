@@ -9,7 +9,7 @@ function getInitialTheme() {
     document.documentElement.setAttribute('data-theme', initialTheme);
     return initialTheme;
   }
-  return 'light'; // SSR alatt default
+  return 'light'; 
 }
 
 export const theme = writable(getInitialTheme());

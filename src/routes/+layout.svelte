@@ -30,9 +30,6 @@
     color: var(--color-text);
     transition: background 0.3s, color 0.3s;
   }
-  .theme-toggle-btn {
-    /* A stílusokat a global.css-ben szabályozzuk! */
-  }
   @media (max-width: 768px) {
     .layout-content {
       padding: 1rem;
