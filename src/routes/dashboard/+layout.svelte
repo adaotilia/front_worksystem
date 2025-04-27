@@ -4,6 +4,9 @@
   import StatCard from '../../components/StatCard.svelte';
   import { goto } from '$app/navigation';
   import { auth } from '../../stores/authStore.js';
+  import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
+  import { API_BASE } from '../../config.js';
 
   // Tab menü logika: oldalon belüli tabváltás
   let activeTab = 'checkpoint';
@@ -15,10 +18,47 @@
     { key: 'dashboard', label: 'Vezérlőpult' }
   ];
 
-  export let profile = {};
-  export let stat = {};
-  export let error = '';
-  export let logoutFn = () => { auth.logout(); goto('/'); };
+  let userData = null;
+  let userStatus = '';
+  let token = '';
+  let EmployeeId = '';
+  let stat = {};
+  let error = '';
+  let logoutFn = () => { auth.logout(); goto('/'); };
+
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+
+  async function fetchUserData(token, EmployeeId) {
+    if (!token || !EmployeeId) return;
+    const userRes = await fetch(`${API_BASE}/Employee/employees/me`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (userRes.ok) {
+      userData = await userRes.json();
+    }
+    const statusRes = await fetch(`${API_BASE}/Employee/checkpoints/status/${year}/${month}/${day}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (statusRes.ok) {
+      userStatus = await statusRes.text();
+    }
+  }
+
+  onMount(() => {
+    const token = localStorage.getItem('token');
+    const EmployeeId = localStorage.getItem('EmployeeId');
+    fetchUserData(token, EmployeeId);
+  });
+
   let showActions = false;
   let showMonthlyActions = false;
   let showScheduleActions = false;
@@ -27,12 +67,15 @@
 
 <main class="dashboard-layout">
   <header class="dashboard-header">
-    <ProfileCard
-      fullName={profile.fullName || ''}
-      userRole={profile.userRole || ''}
-      username={profile.username || ''}
-      sessionStatus={profile.sessionStatus || ''}
-    />
+    {#if userData}
+      <ProfileCard
+        fullName={userData.fullName}
+        userRole={userData.userRole}
+        username={userData.username}
+        EmployeeId={userData.EmployeeId}
+        sessionStatus={userStatus === 'Active' ? 'Aktív' : 'Inaktív'}
+      />
+    {/if}
     {#if error}
       <div class="error">{error}</div>
     {/if}

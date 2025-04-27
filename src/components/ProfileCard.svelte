@@ -2,6 +2,7 @@
   export let fullName = '';
   export let userRole = '';
   export let username = '';
+  export let employeeId = '';
   export let sessionStatus = '';
 
   // Monogram generálása
@@ -18,11 +19,12 @@
   <div class="profile-info">
     <div class="profile-name">{fullName}</div>
     <span class="profile-username">{username}</span>
+    <div class="profile-employeeid">ID: {employeeId}</div>
     <div class="profile-role">{userRole}</div>
     {#if sessionStatus}
-      <div class="profile-status {sessionStatus === 'online' ? 'online' : 'offline'}">
+      <div class="profile-status {sessionStatus === 'Active' ? 'status-active' : 'status-inactive'}">
         <span class="status-dot"></span>
-        {sessionStatus === 'online' ? 'Aktív' : 'Inaktív'}
+        {sessionStatus === 'Active' ? 'Aktív' : 'Inaktív'}
       </div>
     {/if}
   </div>
@@ -85,37 +87,19 @@
     margin-top: 0.1rem;
   }
   .profile-status {
-    display: inline-block;
-    padding: 0.3em 0.8em;
+    display: block;
     border-radius: 0.25rem;
     font-size: 0.9rem;
     font-weight: 500;
     margin-top: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
     width: fit-content;
   }
-  .status-dot {
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 50%;
-    background: #ccc;
+  .profile-status.status-active {
+    color: #22c55e; 
+    font-weight: bold;
   }
-  .profile-status.online {
-    color: #4ade80;
-    background: rgba(74, 222, 128, 0.2);
-    border: 1px solid #4ade80;
-  }
-  .profile-status.online .status-dot {
-    background: #4ade80;
-  }
-  .profile-status.offline {
-    color: #f87171;
-    background: rgba(248, 113, 113, 0.2);
-    border: 1px solid #f87171;
-  }
-  .profile-status.offline .status-dot {
-    background: #f87171;
+  .profile-status.status-inactive {
+    color: #ef4444; 
+    font-weight: bold;
   }
 </style>

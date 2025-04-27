@@ -11,15 +11,9 @@
   const dispatch = createEventDispatcher();
   let token = '';
   let userRole = '';
-  export let EmployeeId = '';
-
+  
   let adminData = null;
   let error = '';
-
-  // Felső kártya státusz
-  let adminCardStatus = '';
-  let adminCardStatusLoading = false;
-  let adminCardStatusError = '';
 
   // Auth store szinkronizáció
   const unsubscribe = auth.subscribe((state) => {
@@ -91,59 +85,8 @@
       } else {
         goto('/');
       }
-    } else {
-      fetchAdminData();
-      if (EmployeeId) {
-        fetchAdminCardStatus(EmployeeId);
-      }
     }
   });
-
-  async function fetchAdminData() {
-    if (!token || !EmployeeId) return;
-    try {
-      const url = `${API_BASE}/Admin/employees/me`;
-      const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const text = await response.text();
-      if (!response.ok) throw new Error('Hiba az admin adatok lekérésekor');
-      adminData = JSON.parse(text);
-      adminData.sessionStatus = 'online';
-    } catch (err) {
-      console.error('Hiba az admin adatok lekérésekor:', err);
-      error = err.message;
-    }
-  }
-
-  async function fetchAdminCardStatus(employeeId) {
-    adminCardStatusLoading = true;
-    adminCardStatusError = '';
-    adminCardStatus = '';
-    try {
-      const today = new Date().toISOString().slice(0, 10);
-      const url = `${API_BASE}/Admin/checkpoints/employee/${employeeId}/status/${today}`;
-      const result = await fetchMessage(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (result.ok) {
-        adminCardStatus = result.json || '';
-      } else {
-        throw new Error(result.message || 'Hiba a státusz lekérdezésekor');
-      }
-    } catch (err) {
-      adminCardStatusError = err.message;
-      adminCardStatus = '';
-    }
-    adminCardStatusLoading = false;
-  }
 
   async function fetchCheckpointsByMonth(year, month) {
     checkpointsLoading = true;

@@ -1,8 +1,6 @@
 <script>
   import { auth } from '../../../stores/authStore.js';
   import { onMount } from 'svelte';
-  import ProfileCard from '../../../components/ProfileCard.svelte';
-  import StatCard from '../../../components/StatCard.svelte';
   import { createEventDispatcher } from 'svelte';
   import { theme } from '../../../themeStore.js';
   import ThemeToggle from '../../../components/ThemeToggle.svelte';

@@ -1,11 +1,7 @@
 <!-- Áthelyezett Manager oldal SvelteKit-hez -->
 <script>
-  // Eredeti Manager.svelte tartalom ide kerül
   import { auth } from '../../../stores/authStore.js';
-  import { theme } from '../../../themeStore.js';
   import { onMount } from 'svelte';
-  import ProfileCard from '../../../components/ProfileCard.svelte';
-  import StatCard from '../../../components/StatCard.svelte';
   import { createEventDispatcher } from 'svelte';
   import ThemeToggle from '../../../components/ThemeToggle.svelte';
   import { goto } from '$app/navigation';
@@ -36,8 +32,6 @@
       } else {
         goto('/');
       }
-    } else {
-      // Itt lehet majd manager-specific fetch, ha szükséges
     }
   });
 

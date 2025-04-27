@@ -40,15 +40,14 @@
         loginOpen = false;
         username = '';
         password = '';
-        // Jogkör alapú átirányítás
         if (data.userRole === 'Admin') {
-          goto('dashboard/admin');
+          goto('/dashboard/admin', { replaceState: true, reload: true });
         } else if (data.userRole === 'Manager') {
-          goto('dashboard/manager');
+          goto('/dashboard/manager', { replaceState: true, reload: true });
         } else if (data.userRole === 'Employee') {
-          goto('dashboard/employee');
+          goto('/dashboard/employee', { replaceState: true, reload: true });
         } else {
-          goto('/');
+          goto('/', { replaceState: true, reload: true });
         }
       } else {
         throw new Error('Hiányzó adat a válaszból!');
