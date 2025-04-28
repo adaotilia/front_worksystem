@@ -240,9 +240,294 @@ input:focus, select:focus, textarea:focus {
 [data-theme='dark'] .logout-btn:hover {
   background: #ff4747;
 }
+/* Dashboard dolgozói táblák - checkpoint tab kinézethez igazítva */
+.data-table-wrapper {
+  overflow-x: auto;
+  margin-top: 1.2rem;
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: 50%;
+  transform: translateX(-50%);
+  padding: 0 2vw;
+  box-sizing: border-box;
+}
+.data-table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 900px;
+  background: var(--color-table-bg, #fff);
+  color: var(--color-table-row-text, #23203a);
+  border-radius: 0.7rem;
+  box-shadow: 0 2px 16px 0 rgba(76,36,150,0.08);
+}
+.data-table th, .data-table td {
+  padding: 0.75rem 1.2rem;
+  border-bottom: 1px solid var(--color-table-border, #ece6fa);
+  text-align: left;
+}
+.data-table th {
+  background: var(--color-table-header-bg, #f5f3ff);
+  color: var(--color-table-header-text, #6c3bb8);
+  font-weight: 700;
+  font-size: 1.07rem;
+}
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+@media (max-width: 1100px) {
+  .data-table {
+    min-width: 700px;
+  }
+  .data-table-wrapper {
+    padding: 0 0.5vw;
+  }
+}
 @media (max-width: 700px) {
   .theme-toggle-btn {
     width: 2.25rem;
     height: 2.25rem;
   }
+}
+
+/* Stílusos select (legördülő) mező, témához igazodva */
+select, .styled-select {
+  border-radius: var(--radius);
+  border: 1.5px solid var(--color-primary);
+  padding: 0.7rem 1.1rem;
+  font-size: 1.08rem;
+  background: var(--surface-1);
+  color: var(--color-text);
+  transition: border 0.2s, background 0.2s, color 0.2s;
+  box-shadow: var(--shadow);
+  outline: none;
+  margin: 0.4rem 0.6rem 0.4rem 0;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+select:focus, .styled-select:focus {
+  border-color: var(--color-accent);
+}
+[data-theme='dark'] select, [data-theme='dark'] .styled-select {
+  background: var(--surface-1);
+  color: var(--color-text);
+  border-color: var(--color-primary);
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%23bdbfff" height="16" viewBox="0 0 20 20" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M7.293 7.293a1 1 0 011.414 0L10 8.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 0.8rem center;
+  background-size: 1.1em;
+  padding-right: 2.2em;
+}
+
+::-webkit-scrollbar {
+  width: 0.5rem;
+  background: var(--surface-2);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 0.5rem;
+}
+
+.tab {
+  background: var(--surface-2);
+  color: var(--color-text);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 0.7em 1.4em;
+  margin-right: 0.5em;
+  cursor: pointer;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background 0.2s, color 0.2s;
+}
+.tab.active {
+  background: var(--color-primary);
+  color: var(--button-text);
+}
+
+.message {
+  padding: 0.8em 1.2em;
+  border-radius: var(--radius);
+  font-size: 1.08rem;
+  font-weight: 500;
+  margin: 0.6em 0 0.6em 0;
+  text-align: center;
+  box-shadow: 0 2px 10px 0 rgba(0,0,0,0.06);
+  display: inline-block;
+}
+.message.error {
+  color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.18);
+  border: 1px solid #ff4d4f;
+  text-align: center;
+}
+.message.success {
+  color: #52c41a;
+  background: rgba(82, 196, 26, 0.18);
+  border: 1px solid #52c41a;
+  text-align: center;
+}
+.message.success, .message.error {
+  min-width: 16rem;
+  max-width: unset;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1rem 1rem;
+  border-radius: 1rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0 auto;
+}
+.message-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 0 auto;
+}
+.logout-btn {
+  background: #ff6b6b;
+  color: #fff;
+  border: none;
+  border-radius: 1.3rem;
+  padding: 0.45rem 2.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.logout-btn:hover {
+  background: #ff4747;
+}
+[data-theme='dark'] .logout-btn {
+  background: #ff6b6b;
+  color: #fff;
+}
+[data-theme='dark'] .logout-btn:hover {
+  background: #ff4747;
+}
+/* Checkpoint forms: gombok lent igazítva */
+.checkpoint-form-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+.checkpoint-form-row > .form-inline-group-col {
+  flex: none;
+  min-width: 120px;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.checkpoint-form-row .form-btn-col {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-left: 0;
+  align-self: center;
+  min-width: 120px;
+  max-width: 180px;
+  margin-top: 1rem;
+}
+@media (max-width: 1100px) {
+  .checkpoint-form-row {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 900px) {
+  .checkpoint-form-row > .form-inline-group-col {
+    min-width: 100px;
+    max-width: 100%;
+  }
+  .checkpoint-form-row .form-btn-col {
+    min-width: 100px;
+    max-width: 100%;
+  }
+}
+@media (max-width: 700px) {
+  .checkpoint-form-row {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+  .checkpoint-form-row .form-btn-col {
+    align-items: stretch;
+    margin-left: 0;
+    align-self: stretch;
+    min-width: 100px;
+    max-width: 100%;
+  }
+}
+
+/* --- HAVI MUNKA ÉS VEZÉRLŐPULT TABOK EGYSÉGES, DE KOMPAKT STÍLUSA --- */
+.monthly-form-row, .dashboard-form-row, .form-inline-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+.monthly-form-row input, .dashboard-form-row input, .form-inline-group input {
+  padding: 0.7rem 0.8rem;
+  font-size: 1.05rem;
+  max-width: 140px;
+  min-width: 70px;
+  margin: 0.2rem 0.5rem 0.2rem 0;
+}
+.monthly-form-row label, .dashboard-form-row label, .form-inline-group label {
+  margin: 0 0.3rem 0 0;
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .monthly-form-row, .dashboard-form-row, .form-inline-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .monthly-form-row input, .dashboard-form-row input, .form-inline-group input {
+    max-width: 100%;
+    font-size: 1rem;
+  }
+}
+
+/* Stílusos select (legördülő) mező, témához igazodva */
+select, .styled-select {
+  border-radius: var(--radius);
+  border: 1.5px solid var(--color-primary);
+  padding: 0.7rem 1.1rem;
+  font-size: 1.08rem;
+  background: var(--surface-1);
+  color: var(--color-text);
+  transition: border 0.2s, background 0.2s, color 0.2s;
+  box-shadow: var(--shadow);
+  outline: none;
+  margin: 0.4rem 0.6rem 0.4rem 0;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+select:focus, .styled-select:focus {
+  border-color: var(--color-accent);
+}
+[data-theme='dark'] select, [data-theme='dark'] .styled-select {
+  background: var(--surface-1);
+  color: var(--color-text);
+  border-color: var(--color-primary);
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%23bdbfff" height="16" viewBox="0 0 20 20" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M7.293 7.293a1 1 0 011.414 0L10 8.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 0.8rem center;
+  background-size: 1.1em;
+  padding-right: 2.2em;
+}
+select {
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%236c3bb8" height="16" viewBox="0 0 20 20" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M7.293 7.293a1 1 0 011.414 0L10 8.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 0.8rem center;
+  background-size: 1.1em;
+  padding-right: 2.2em;
 }
