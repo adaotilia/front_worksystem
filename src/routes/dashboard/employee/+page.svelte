@@ -6,15 +6,30 @@
   import ThemeToggle from '../../../components/ThemeToggle.svelte';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
-
+  import { API_BASE } from '../../../config.js';
+  import { authFetch } from '../../../authFetch.js';
+  
   const dispatch = createEventDispatcher();
-  const API_BASE = import.meta.env.VITE_API_URL;
   let token = '';
   let userRole = '';
   export let EmployeeId = '';
 
   let employeeData = null;
   let error = '';
+
+  let showActions = false;
+  let showMonthlyActions = false;
+  let showScheduleActions = false;
+  let showReportActions = false;
+
+  let activeTab = 'checkpoint';
+  const tabs = [
+    { key: 'checkpoint', label: 'Checkpoint' },
+    { key: 'monthly', label: 'Havi munka' },
+    { key: 'schedule', label: 'Beosztás' },
+    { key: 'report', label: 'Kimutatás' },
+    { key: 'dashboard', label: 'Vezérlőpult' }
+  ];
 
   // Auth store szinkronizáció
   const unsubscribe = auth.subscribe((state) => {
@@ -65,11 +80,572 @@
     auth.logout();
     goto('/');
   }
+
+  // --- Havi checkpoint lekérés saját azonosítóra ---
+  let selectedYear = '';
+  let selectedMonth = '';
+  let checkpoints = [];
+  let checkpointsLoading = false;
+  let checkpointsError = '';
+  let hasTriedMonthFetch = false;
+
+  async function fetchCheckpointsByMonth(year, month) {
+    checkpointsLoading = true;
+    checkpointsError = '';
+    checkpoints = [];
+    hasTriedMonthFetch = true;
+    try {
+      const url = `${API_BASE}/Employee/checkpoints/${year}/${month}`;
+      const response = await authFetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error('Hiba a checkpointok lekérdezésekor');
+      checkpoints = await response.json();
+    } catch (err) {
+      checkpointsError = err.message;
+      checkpoints = [];
+    }
+    checkpointsLoading = false;
+  }
 </script>
 
+<nav class="dashboard-tabs">
+  {#each tabs as tab}
+    <button
+      type="button"
+      class="dashboard-tab-btn"
+      class:active={activeTab === tab.key}
+      on:click={() => activeTab = tab.key}
+    >
+      {tab.label}
+    </button>
+  {/each}
+</nav>
+
 <section>
-  <h2>Employee dashboard tartalom (TODO)</h2>
+  {#if activeTab === 'checkpoint'}
+    <div class="api-row api-row-column">
+      <div class="api-description">Év és hónap szerint az összes Checkpoint lekérése:</div>
+      <form class="api-action-form checkpoint-form-row-horizontal" on:submit|preventDefault={() => fetchCheckpointsByMonth(selectedYear, selectedMonth)}>
+        <div class="form-inline-group">
+          <label for="year-select">Év:</label>
+          <input type="number" id="year-select" name="year" min="2024" max="2070" bind:value={selectedYear} placeholder="Pl. 2025" required class="checkpoint-input" />
+        </div>
+        <div class="form-inline-group">
+          <label for="month-select">Hónap:</label>
+          <input type="number" id="month-select" name="month" min="1" max="12" bind:value={selectedMonth} placeholder="1-12" required class="checkpoint-input" />
+        </div>
+        <div class="form-btn-col">
+          <button type="submit" class="primary-action">Lekérés</button>
+        </div>
+      </form>
+      {#if checkpointsLoading}
+        <div>Betöltés...</div>
+      {:else if checkpointsError}
+        <div class="error">{checkpointsError}</div>
+      {:else if checkpoints.length > 0}
+        <table class="checkpoint-table">
+          <thead>
+            <tr>
+              <th>Dolgozó azonosító</th>
+              <th>Belépési idő</th>
+              <th>Kilépési idő</th>
+              <th>Státusz</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each checkpoints as cp}
+              <tr>
+                <td>{cp.employeeId}</td>
+                <td>{cp.checkInTime}</td>
+                <td>{cp.checkOutTime}</td>
+                <td>{cp.sessionStatus}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      {:else if hasTriedMonthFetch}
+        <div>Nincs adat a megadott időszakra.</div>
+      {/if}
+    </div>
+  {/if}
+
+  {#if activeTab === 'monthly'}
+    <div class="api-row api-row-column">
+      <div class="api-description">
+        Havi munka lekérdezése (év-hónap, dolgozó):
+      </div>
+      <form class="api-action-form">
+        <div class="form-inline-group">
+          <label for="month-date">Év-hónap:</label>
+          <input type="month" id="month-date" name="monthDate" />
+        </div>
+        <div class="form-inline-group">
+          <label for="user-id">Dolgozó azonosító:</label>
+          <input type="text" id="user-id" name="userId" placeholder="Pl. 123" />
+        </div>
+      </form>
+    </div>
+    <div class="checkpoint-table-wrapper">
+      <table class="checkpoint-table">
+        <thead>
+          <tr>
+            <th>Dolgozó azonosító</th>
+            <th>Év-hónap</th>
+            <th>Dátum</th>
+            <th>Munkaórák</th>
+            <th>Túlórák</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>123</td>
+            <td>2025-04</td>
+            <td>2025-04-27</td>
+            <td>8</td>
+            <td>2</td>
+          </tr>
+        </tbody>
+      </table>
+      <table class="summary-table">
+        <tbody>
+          <tr>
+            <td>Havi munkanapok</td>
+            <td>20</td>
+          </tr>
+          <tr>
+            <td>Havi munkaórák</td>
+            <td>160</td>
+          </tr>
+          <tr>
+            <td>Havi túlórák</td>
+            <td>12</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  {/if}
+
+  {#if activeTab === 'schedule'}
+    <div class="api-row api-row-column">
+      <div class="api-description">
+        Beosztás lekérdezése (dátum, dolgozó):
+      </div>
+      <form class="api-action-form">
+        <div class="form-inline-group">
+          <label for="schedule-date">Dátum:</label>
+          <input type="date" id="schedule-date" name="scheduleDate" />
+        </div>
+        <div class="form-inline-group">
+          <label for="user-id-schedule">Dolgozó azonosító:</label>
+          <input type="text" id="user-id-schedule" name="userIdSchedule" placeholder="Pl. 123" />
+        </div>
+      </form>
+    </div>
+    <div class="checkpoint-table-wrapper">
+      <table class="checkpoint-table">
+        <thead>
+          <tr>
+            <th>Dolgozó azonosító</th>
+            <th>Dátum</th>
+            <th>Kezdési időpont</th>
+            <th>Befejezési időpont</th>
+            <th>Típus</th>
+            <th>Tervezett munkaórák</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>123</td>
+            <td>2025-04-27</td>
+            <td>08:00</td>
+            <td>16:00</td>
+            <td>Nappali</td>
+            <td>8</td>
+          </tr>
+        </tbody>
+      </table>
+      <table class="summary-table">
+        <tbody>
+          <tr>
+            <td>Tervezett havi munkaórák</td>
+            <td>168</td>
+          </tr>
+          <tr>
+            <td>Tervezett havi munkanapok</td>
+            <td>21</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  {/if}
+
+  {#if activeTab === 'report'}
+    <div class="api-row api-row-column">
+      <div class="api-description">
+        Kimutatás lekérdezése (dátum, dolgozó):
+      </div>
+      <form class="api-action-form">
+        <div class="form-inline-group">
+          <label for="report-date">Dátum:</label>
+          <input type="date" id="report-date" name="reportDate" />
+        </div>
+        <div class="form-inline-group">
+          <label for="user-id-report">Dolgozó azonosító:</label>
+          <input type="text" id="user-id-report" name="userIdReport" placeholder="Pl. 123" />
+        </div>
+      </form>
+    </div>
+    <div class="checkpoint-table-wrapper">
+      <table class="checkpoint-table">
+        <thead>
+          <tr>
+            <th>Dolgozó azonosító</th>
+            <th>Dátum</th>
+            <th>Munkaóra</th>
+            <th>Túlóra</th>
+            <th>Tervezett munkaóra</th>
+            <th>Tervezett túlóra</th>
+            <th>Típus</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>123</td>
+            <td>2025-04-27</td>
+            <td>8</td>
+            <td>2</td>
+            <td>8</td>
+            <td>1</td>
+            <td>Nappali</td>
+          </tr>
+        </tbody>
+      </table>
+      <table class="summary-table">
+        <tbody>
+          <tr>
+            <td>Havi munkanapok</td>
+            <td>20</td>
+          </tr>
+          <tr>
+            <td>Tervezett havi munkanapok</td>
+            <td>21</td>
+          </tr>
+          <tr>
+            <td>Havi túlórák</td>
+            <td>12</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  {/if}
+
+  {#if activeTab === 'dashboard'}
+    <div class="dashboard-actions-row">
+      <span class="actions-label">Műveletek</span>
+    </div>
+    <div class="actions-panel">
+      <div class="api-row">
+        <button class="danger-action">Jelszó megváltoztatása</button>
+      </div>
+    </div>
+  {/if}
 </section>
 
 <style>
+  :global(.dashboard-layout) {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100vw;
+  }
+  :global(.dashboard-header) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background: var(--color-bg-header, #242038);
+  color: var(--color-header-text, #fff);
+  gap: 2.5rem;
+  }
+  @media (max-width: 900px) {
+  :global(.dashboard-header) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.2rem;
+    padding: 1rem 0.7rem;
+  }
+  }
+  :global(.dashboard-header-center) {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  }
+  @media (max-width: 900px) {
+  :global(.dashboard-header-center) {
+    justify-content: flex-start;
+  }
+  }
+  :global(.dashboard-header-actions) {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  }
+  :global(.logout-btn) {
+  background: var(--color-logout-btn-bg, #ff6b6b);
+  color: var(--color-logout-btn-text, #fff);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  }
+  :global(.dashboard-tabs) {
+  display: flex;
+  justify-content: left;
+  gap: 1.5rem;
+  background: var(--color-dashboard-tabs-bg, #181526);
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-dashboard-tabs-border, #332f4b);
+  }
+  @media (max-width: 900px) {
+    :global(.dashboard-tabs) {
+      flex-wrap: wrap;
+      gap: 0.7rem;
+      padding: 0.5rem 0.2rem;
+    }
+  }
+  :global(.dashboard-tab-btn) {
+  background: none;
+  border: none;
+  color: var(--color-dashboard-tab, #bdbfff);
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem 1.2rem;
+  border-radius: 0.5rem 0.5rem 0 0;
+  transition: background 0.15s, color 0.15s;
+  text-decoration: none;
+  }
+  :global(.dashboard-tab-btn.active),
+  :global(.dashboard-tab-btn:hover) {
+  background: var(--color-dashboard-tab-active-bg, #332f4b);
+  color: var(--color-dashboard-tab-active-text, #fff);
+  }
+  :global(.dashboard-content) {
+  flex: 1;
+  padding: 2rem;
+  }
+  :global(.error) {
+  color: var(--color-error, #ff6b6b);
+  margin-left: 2rem;
+  font-weight: bold;
+  }
+  .api-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.2rem;
+  margin-bottom: 1rem;
+  }
+  .api-row:last-child {
+  margin-bottom: 0;
+  }
+  .api-row-column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+  .api-action-form {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+  }
+  .form-inline-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.2rem;
+  }
+  .form-inline-group label {
+    margin: 0;
+    min-width: 0;
+  }
+  .form-inline-group input[type="date"] {
+  margin: 0;
+  min-width: 180px;
+  color: var(--color-table-placeholder, #bdbfff);
+  background: inherit;
+  }
+  .form-inline-group input[type="date"]::placeholder {
+    color: var(--color-table-placeholder, #bdbfff);
+    opacity: 1;
+  }
+  .form-inline-group input[type="text"] {
+    min-width: 140px;
+    max-width: 220px;
+    width: 100%;
+    font-size: 1rem;
+    padding: 0.42rem 0.8rem;
+    border-radius: 0.42rem;
+    box-sizing: border-box;
+  }
+  .form-inline-group input[type="text"]::placeholder {
+    color: var(--color-table-placeholder, #bdbfff);
+    opacity: 1;
+  }
+  .primary-action {
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: 0.7rem;
+    padding: 0.5rem 1.2rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 42px;
+  }
+  .primary-action:hover {
+    background: var(--color-primary-hover, #a084e8);
+  }
+  @media (max-width: 1100px) {
+    .primary-action {
+      margin-top: 0.5rem;
+      align-self: center;
+    }
+  }
+  .checkpoint-table-wrapper {
+  overflow-x: auto;
+  margin-top: 1.2rem;
+  }
+  .checkpoint-table {
+  border-collapse: collapse;
+  width: 100%;
+  background: var(--color-table-bg, #fff);
+  color: var(--color-table-row-text, #23203a);
+  border-radius: 0.7rem;
+  box-shadow: 0 2px 16px 0 rgba(76,36,150,0.08);
+  }
+  .checkpoint-table th, .checkpoint-table td {
+  padding: 0.75rem 1.2rem;
+  border-bottom: 1px solid var(--color-table-border, #ece6fa);
+  text-align: left;
+  }
+  .checkpoint-table th {
+  background: var(--color-table-header-bg, #f5f3ff);
+  color: var(--color-table-header-text, #6c3bb8);
+  font-weight: 700;
+  font-size: 1.07rem;
+  }
+  .checkpoint-table tr:last-child td {
+  border-bottom: none;
+  }
+  .summary-table {
+  margin-top: 1.7rem;
+  width: 100%;
+  background: var(--color-table-bg, #fff);
+  color: var(--color-table-row-text, #23203a);
+  border-radius: 0.7rem;
+  box-shadow: 0 2px 16px 0 rgba(76,36,150,0.08);
+  border-collapse: collapse;
+  }
+  .summary-table td {
+  padding: 0.82rem 1.2rem;
+  border-bottom: 1px solid var(--color-table-border, #ece6fa);
+  font-size: 1.08rem;
+  }
+  .summary-table tr:last-child td {
+  border-bottom: none;
+  }
+  .summary-table td:first-child {
+  font-weight: 600;
+  color: var(--color-table-header-text, #6c3bb8);
+  background: var(--color-table-header-bg, #f5f3ff);
+  width: 60%;
+  }
+  .summary-table td:last-child {
+  text-align: right;
+  font-weight: 500;
+  }
+  .danger-action {
+  background: #ff6b6b;
+  color: #fff;
+  border: none;
+  border-radius: 0.4rem;
+  padding: 0.45rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  transition: background 0.15s;
+  }
+  .danger-action:hover {
+  background: #ff6b6b;
+  }
+  .actions-label {
+  font-size: 1.13rem;
+  font-weight: 600;
+  color: var(--color-table-header-text, #6c3bb8);
+  margin-left: 1.2rem;
+  display: block;
+  }
+  label[for="month-select"] {
+    margin-right: 0.5rem;
+  }
+  .api-description {
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 1.04rem;
+    color: var(--color-table-header-text, #6c3bb8);
+    font-weight: 500;
+  }
+  .checkpoint-form-row-horizontal {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .form-btn-col {
+    min-width: 120px;
+    align-items: center;
+    justify-content: flex-end;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  @media (max-width: 1100px) {
+    .form-btn-col {
+      align-items: stretch;
+    }
+  }
+  .checkpoint-input {
+    color: var(--color-table-placeholder, #bdbfff);
+    background: inherit;
+    border: 1px solid var(--color-table-placeholder, #bdbfff);
+    border-radius: 0.7rem;
+    padding: 0.5rem 1rem;
+    font-size: 1.05rem;
+    transition: border 0.15s;
+  }
+  .checkpoint-input::placeholder {
+    color: var(--color-table-placeholder, #bdbfff);
+    opacity: 1;
+  }
+  .checkpoint-input:focus {
+    border-color: var(--color-table-header-text, #6c3bb8);
+    outline: none;
+  }
 </style>
