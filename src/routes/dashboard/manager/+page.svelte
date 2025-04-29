@@ -453,15 +453,11 @@
   {#if activeTab === 'checkpoint'}
     <div class="api-row api-row-column">
       <div class="api-description">Év és hónap szerint az összes Checkpoint lekérése:</div>
-      <form class="api-action-form" on:submit|preventDefault={() => fetchCheckpointsByMonth(selectedYear, selectedMonth)}>
-        <div class="form-inline-group">
-          <label for="year-select">Év:</label>
-          <input type="number" id="year-select" name="year" min="2024" max="2070" bind:value={selectedYear} placeholder="Pl. 2025" required class="checkpoint-input" />
-        </div>
-        <div class="form-inline-group">
-          <label for="month-select">Hónap:</label>
-          <input type="number" id="month-select" name="month" min="1" max="12" bind:value={selectedMonth} placeholder="1-12" required class="checkpoint-input" />
-        </div>
+      <form class="api-action-form form-inline-group" on:submit|preventDefault={() => fetchCheckpointsByMonth(selectedYear, selectedMonth)}>
+        <label for="year-select">Év:</label>
+        <input type="number" id="year-select" name="year" min="2024" max="2070" bind:value={selectedYear} placeholder="Pl. 2025" required class="checkpoint-input" />
+        <label for="month-select">Hónap:</label>
+        <input type="number" id="month-select" name="month" min="1" max="12" bind:value={selectedMonth} placeholder="1-12" required class="checkpoint-input" />
         <div class="form-btn-col">
           <button type="submit" class="primary-action">Lekérés</button>
         </div>
@@ -495,19 +491,13 @@
     </div>
     <div class="api-row api-row-column">
       <div class="api-description">Dolgozó azonosító, év és hónap szerint a Checkpoint-ok lekérése:</div>
-      <form class="api-action-form" on:submit|preventDefault={() => fetchCheckpointsByEmployeeId(employeeIdInput, employeeYearInput, employeeMonthInput)}>
-        <div class="form-inline-group">
-          <label for="employee-id-input">Dolgozó azonosító:</label>
-          <input type="number" id="employee-id-input" name="employeeId" min="100" max="999" bind:value={employeeIdInput} placeholder="Pl. 123" required class="checkpoint-input" />
-        </div>
-        <div class="form-inline-group">
-          <label for="employee-year-input">Év:</label>
-          <input type="number" id="employee-year-input" name="year" min="2024" max="2070" bind:value={employeeYearInput} placeholder="Pl. 2025" required class="checkpoint-input" />
-        </div>
-        <div class="form-inline-group">
-          <label for="employee-month-input">Hónap:</label>
-          <input type="number" id="employee-month-input" name="month" min="1" max="12" bind:value={employeeMonthInput} placeholder="1-12" required class="checkpoint-input" />
-        </div>
+      <form class="api-action-form form-inline-group" on:submit|preventDefault={() => fetchCheckpointsByEmployeeId(employeeIdInput, employeeYearInput, employeeMonthInput)}>
+        <label for="employee-id-input">Dolgozó azonosító:</label>
+        <input type="number" id="employee-id-input" name="employeeId" min="100" max="999" bind:value={employeeIdInput} placeholder="Pl. 123" required class="checkpoint-input" />
+        <label for="employee-year-input">Év:</label>
+        <input type="number" id="employee-year-input" name="year" min="2024" max="2070" bind:value={employeeYearInput} placeholder="Pl. 2025" required class="checkpoint-input" />
+        <label for="employee-month-input">Hónap:</label>
+        <input type="number" id="employee-month-input" name="month" min="1" max="12" bind:value={employeeMonthInput} placeholder="1-12" required class="checkpoint-input" />
         <div class="form-btn-col">
           <button type="submit" class="primary-action">Lekérés</button>
         </div>
@@ -541,11 +531,9 @@
     </div>
     <div class="api-row api-row-column">
       <div class="api-description">Státusz lekérdezése dolgozó azonosító alapján (mai nap):</div>
-      <form class="api-action-form" on:submit|preventDefault={() => fetchEmployeeStatus(statusEmployeeId, statusDate)}>
-        <div class="form-inline-group">
-          <label for="status-employee-id">Dolgozó azonosító:</label>
-          <input type="number" id="status-employee-id" min="100" max="999" bind:value={statusEmployeeId} placeholder="Pl. 123" required class="checkpoint-input" />
-        </div>
+      <form class="api-action-form form-inline-group" on:submit|preventDefault={() => fetchEmployeeStatus(statusEmployeeId, statusDate)}>
+        <label for="status-employee-id">Dolgozó azonosító:</label>
+        <input type="number" id="status-employee-id" min="100" max="999" bind:value={statusEmployeeId} placeholder="Pl. 123" required class="checkpoint-input" />
         <div class="form-btn-col">
           <button type="submit" class="primary-action">Lekérés</button>
         </div>
@@ -606,20 +594,20 @@
                 <th>Típus</th>
               </tr>
             </thead>
-            <tbody>
-              {#each monthlyReportData as row}
-                <tr>
-                  <td>{row.employeeId}</td>
-                  <td>{row.fullName}</td>
-                  <td>{row.reportMonth?.slice(0,7) ?? ''}</td>
-                  <td>{row.date && row.date !== '0001-01-01' && row.date !== null && row.date !== '' ? row.date : ''}</td>
-                  <td>{formatNumber2(row.workHours)}</td>
-                  <td>{formatNumber2(row.overtimeHours)}</td>
-                  <td>{row.type}</td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
+          <tbody>
+            {#each monthlyReportData as row}
+              <tr>
+                <td>{row.employeeId}</td>
+                <td>{row.fullName}</td>
+                <td>{row.reportMonth?.slice(0,7) ?? ''}</td>
+                <td>{row.date && row.date !== '0001-01-01' && row.date !== null && row.date !== '' ? row.date : ''}</td>
+                <td>{formatNumber2(row.workHours)}</td>
+                <td>{formatNumber2(row.overtimeHours)}</td>
+                <td>{row.type}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
           {#if monthlyReportData.length > 0}
             <table class="summary-table summary-table-standalone">
               <tbody>
@@ -1281,17 +1269,34 @@
     margin-right: 0.8rem;
     min-width: 0;
   }
-  .form-inline-group input[type="text"] {
-    min-width: 140px;
-    max-width: 220px;
-    font-size: 1rem;
-    padding: 0.42rem 0.8rem;
-    border-radius: 0.42rem;
-    box-sizing: border-box;
+  .form-btn-col {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    min-width: 120px;
+    height: 100%;
+    flex-direction: row;
   }
-  .form-inline-group input[type="text"]::placeholder {
-    color: var(--color-table-placeholder, #bdbfff);
-    opacity: 1;
+  @media (max-width: 1100px) {
+    .form-btn-col {
+      align-items: stretch;
+      flex-direction: column;
+    }
+    .form-inline-group {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.3rem;
+    }
+  }
+  .api-action-form.form-inline-group {
+    min-width: 400px;
+    width: 100%;
+  }
+  .form-inline-group-2row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.2rem;
   }
   .primary-action {
     background: var(--color-primary);
@@ -1379,13 +1384,13 @@
   }
   .form-btn-col {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: flex-end;
     min-width: 120px;
     height: 100%;
     flex-direction: row;
   }
-  @media (max-width: 1100px) {
+  @media (max-width: 900px) {
     .form-btn-col {
       align-items: stretch;
       flex-direction: column;
@@ -1413,7 +1418,7 @@
   }
   .form-btn-col {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: flex-end;
     min-width: 120px;
     height: 100%;
@@ -1433,5 +1438,11 @@
   .api-action-form.form-inline-group {
     min-width: 400px;
     width: 100%;
+  }
+  .form-inline-group-2row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.2rem;
   }
 </style>
