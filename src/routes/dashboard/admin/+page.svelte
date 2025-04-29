@@ -120,7 +120,7 @@
   let singleEmployeeIdInput = '';
   let showSingleEmployee = false;
 
-  // Új: dolgozók lekérése szerep szerint
+  // Új: dolgozók lekérése jogkör szerint
   let selectedRole = 'Employee';
   let employeesByRole = [];
   let employeesByRoleLoading = false;
@@ -517,323 +517,130 @@
     deletingCheckpoint = false;
   }
 
-  async function fetchEmployeesByRole() {
-    employeesByRoleLoading = true;
-    employeesByRoleError = '';
-    employeesByRole = [];
-    try {
-      const response = await authFetch(`${API_BASE}/Admin/employees/role/${selectedRole}`, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!response.ok) {
-        let errorMsg = 'Hiba a dolgozók lekérdezésekor';
-        try {
-          const text = await response.text();
-          let data;
-          try {
-            data = JSON.parse(text);
-          } catch {}
-          if (data && typeof data === 'object' && data.message) {
-            errorMsg = data.message;
-          } else if (text) {
-            errorMsg = text.split(/\.|\n/)[0].trim();
-          }
-        } catch {}
-        throw new Error(errorMsg);
-      }
-      employeesByRole = await response.json();
-    } catch (err) {
-      employeesByRoleError = err.message;
-      employeesByRole = [];
-    }
-    employeesByRoleLoading = false;
-  }
-
-  async function addEmployee() {
-    addEmployeeLoading = true;
-    addEmployeeError = '';
-    addEmployeeSuccess = '';
-    try {
-      const response = await authFetch(`${API_BASE}/Admin/employees`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          id: 0,
-          employeeId: 0,
-          fullName: newFullName,
-          username: newUsername,
-          password: newPassword,
-          userRole: newUserRole,
-          newUsername: '',
-          newFullName: ''
-        })
-      });
-      if (!response.ok) {
-        let errorMsg = 'Dolgozó hozzáadása sikertelen.';
-        try {
-          const text = await response.text();
-          let data;
-          try {
-            data = JSON.parse(text);
-          } catch {}
-          if (data && typeof data === 'object' && data.message) {
-            errorMsg = data.message;
-          } else if (text) {
-            errorMsg = text.split(/\.|\n/)[0].trim();
-          }
-        } catch {}
-        throw new Error(errorMsg);
-      }
-      addEmployeeSuccess = 'Dolgozó sikeresen hozzáadva!';
-      // Mezők ürítése
-      newFullName = '';
-      newUsername = '';
-      newPassword = '';
-      newUserRole = 'Employee';
-    } catch (err) {
-      addEmployeeError = err.message;
-    }
-    addEmployeeLoading = false;
-  }
-
-  async function updateEmployeeFullname() {
-    updateFullnameLoading = true;
-    updateFullnameError = '';
-    updateFullnameSuccess = '';
-    try {
-      const response = await authFetch(`${API_BASE}/Admin/employees/${updateFullnameId}/fullname`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          id: 0,
-          employeeId: Number(updateFullnameId),
-          fullName: updateFullnameOld,
-          username: '',
-          newUsername: '',
-          newFullName: updateFullnameNew,
-          password: '',
-          userRole: 'Employee'
-        })
-      });
-      if (!response.ok) {
-        let errorMsg = 'Teljes név módosítása sikertelen.';
-        try {
-          const text = await response.text();
-          let data;
-          try { data = JSON.parse(text); } catch {}
-          if (data && typeof data === 'object' && data.message) {
-            errorMsg = data.message;
-          } else if (text) {
-            errorMsg = text.split(/\.|\n/)[0].trim();
-          }
-        } catch {}
-        throw new Error(errorMsg);
-      }
-      updateFullnameSuccess = 'Teljes név sikeresen módosítva!';
-      updateFullnameId = '';
-      updateFullnameOld = '';
-      updateFullnameNew = '';
-    } catch (err) {
-      updateFullnameError = err.message;
-    }
-    updateFullnameLoading = false;
-  }
-
-  async function updateEmployeeUsername() {
-    updateUsernameLoading = true;
-    updateUsernameError = '';
-    updateUsernameSuccess = '';
-    try {
-      const response = await authFetch(`${API_BASE}/Admin/employees/${updateUsernameId}/username`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          id: 0,
-          employeeId: Number(updateUsernameId),
-          fullName: '',
-          username: updateUsernameOld,
-          newUsername: updateUsernameNew,
-          newFullName: '',
-          password: '',
-          userRole: 'Employee'
-        })
-      });
-      if (!response.ok) {
-        let errorMsg = 'Felhasználónév módosítása sikertelen.';
-        try {
-          const text = await response.text();
-          let data;
-          try {
-            data = JSON.parse(text);
-          } catch {}
-          if (data && typeof data === 'object' && data.message) {
-            errorMsg = data.message;
-          } else if (text) {
-            // Csak az első mondatot vagy sort jelenítsük meg
-            errorMsg = text.split(/\.|\n/)[0].trim();
-          }
-        } catch {}
-        throw new Error(errorMsg);
-      }
-      updateUsernameSuccess = 'Felhasználónév sikeresen módosítva!';
-      updateUsernameId = '';
-      updateUsernameOld = '';
-      updateUsernameNew = '';
-    } catch (err) {
-      updateUsernameError = err.message;
-    }
-    updateUsernameLoading = false;
-  }
-
-  async function updateEmployeePassword() {
-    updatePasswordLoading = true;
-    updatePasswordError = '';
-    updatePasswordSuccess = '';
-    try {
-      const response = await authFetch(`${API_BASE}/Admin/employees/${updatePasswordId}/password`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          id: 0,
-          employeeId: Number(updatePasswordId),
-          fullName: '',
-          username: updatePasswordUsername,
-          newUsername: '',
-          newFullName: '',
-          password: updatePasswordNew,
-          userRole: 'Employee'
-        })
-      });
-      if (!response.ok) {
-        let errorMsg = 'Jelszó módosítása sikertelen.';
-        try {
-          const text = await response.text();
-          let data;
-          try {
-            data = JSON.parse(text);
-          } catch {}
-          if (data && typeof data === 'object' && data.message) {
-            errorMsg = data.message;
-          } else if (text) {
-            errorMsg = text.split(/\.|\n/)[0].trim();
-          }
-        } catch {}
-        throw new Error(errorMsg);
-      }
-      updatePasswordSuccess = 'Jelszó sikeresen módosítva!';
-      updatePasswordId = '';
-      updatePasswordUsername = '';
-      updatePasswordNew = '';
-    } catch (err) {
-      updatePasswordError = err.message;
-    }
-    updatePasswordLoading = false;
-  }
-
-  async function updateEmployeeRole() {
-    updateRoleLoading = true;
-    updateRoleError = '';
-    updateRoleSuccess = '';
-    try {
-      const response = await authFetch(`${API_BASE}/Admin/employees/${updateRoleId}/role`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updateRoleNew)
-      });
-      if (!response.ok) {
-        let errorMsg = 'Jogkör módosítása sikertelen.';
-        try {
-          const text = await response.text();
-          let data;
-          try {
-            data = JSON.parse(text);
-          } catch {}
-          if (data && typeof data === 'object' && data.message) {
-            errorMsg = data.message;
-          } else if (text) {
-            errorMsg = text.split(/\.|\n/)[0].trim();
-          }
-        } catch {}
-        throw new Error(errorMsg);
-      }
-      updateRoleSuccess = 'Jogkör sikeresen módosítva!';
-      updateRoleId = '';
-      updateRoleNew = 'Employee';
-    } catch (err) {
-      updateRoleError = err.message;
-    }
-    updateRoleLoading = false;
-  }
-
-  async function deleteEmployee() {
-    deleteEmployeeLoading = true;
-    deleteEmployeeError = '';
-    deleteEmployeeSuccess = '';
-    try {
-      const response = await authFetch(`${API_BASE}/Admin/employees/${deleteEmployeeId}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) {
-        let errorMsg = 'Dolgozó törlése sikertelen.';
-        try {
-          const text = await response.text();
-          let data;
-          try {
-            data = JSON.parse(text);
-          } catch {}
-          if (data && typeof data === 'object' && data.message) {
-            errorMsg = data.message;
-          } else if (text) {
-            errorMsg = text.split(/\.|\n/)[0].trim();
-          }
-        } catch {}
-        throw new Error(errorMsg);
-      }
-      deleteEmployeeSuccess = 'Dolgozó sikeresen törölve!';
-      deleteEmployeeId = '';
-      showDeleteConfirm = false;
-    } catch (err) {
-      deleteEmployeeError = err.message;
-    }
-    deleteEmployeeLoading = false;
-  }
-
   function handleLogout() {
     auth.logout();
     goto('/');
   }
 
-  // Jogosultság ellenőrzés és adatlekérés csak böngészőben, onMount-ban!
-  onMount(() => {
-    if (!token || !userRole || userRole.toLowerCase() !== 'admin') {
-      if (!token || !userRole) {
-        goto('/');
-      } else if (userRole.toLowerCase() === 'employee') {
-        goto('/dashboard/employee');
-      } else if (userRole.toLowerCase() === 'manager') {
-        goto('/dashboard/manager');
-      } else {
-        goto('/');
-      }
+  // Új kimutatás (worklogs) GET metódusok
+  let worklogsByMonth = null;
+  let worklogsByMonthLoading = false;
+  let worklogsByMonthError = '';
+
+  let worklogsByEmployee = null;
+  let worklogsByEmployeeLoading = false;
+  let worklogsByEmployeeError = '';
+
+  let worklogsByDate = null;
+  let worklogsByDateLoading = false;
+  let worklogsByDateError = '';
+
+  async function fetchWorklogsByMonth(year, month) {
+    worklogsByMonthLoading = true;
+    worklogsByMonthError = '';
+    worklogsByMonth = null;
+    try {
+      const url = `${API_BASE}/Admin/worklogs/${year}/${month}`;
+      const response = await authFetch(url, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error('Hiba a kimutatás lekérdezésekor (hónap)');
+      worklogsByMonth = await response.json();
+    } catch (err) {
+      worklogsByMonthError = err.message;
     }
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    statusDate = `${yyyy}-${mm}-${dd}`;
-  });
+    worklogsByMonthLoading = false;
+  }
+
+  async function fetchWorklogsByEmployee(employeeId, year, month) {
+    worklogsByEmployeeLoading = true;
+    worklogsByEmployeeError = '';
+    worklogsByEmployee = null;
+    try {
+      const url = `${API_BASE}/Admin/worklogs/employee/${employeeId}/${year}/${month}`;
+      const response = await authFetch(url, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error('Hiba a kimutatás lekérdezésekor (dolgozó)');
+      worklogsByEmployee = await response.json();
+    } catch (err) {
+      worklogsByEmployeeError = err.message;
+    }
+    worklogsByEmployeeLoading = false;
+  }
+
+  async function fetchWorklogsByDate(year, month, day) {
+    worklogsByDateLoading = true;
+    worklogsByDateError = '';
+    worklogsByDate = null;
+    try {
+      const url = `${API_BASE}/Admin/worklogs/date/${year}/${month}/${day}`;
+      const response = await authFetch(url, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error('Hiba a kimutatás lekérdezésekor (dátum)');
+      worklogsByDate = await response.json();
+    } catch (err) {
+      worklogsByDateError = err.message;
+    }
+    worklogsByDateLoading = false;
+  }
+
+  // Új változók a három lekérdezés inputjához
+  let worklogEmployeeId = '';
+  let worklogEmployeeYear = '';
+  let worklogEmployeeMonth = '';
+  let worklogDateYear = '';
+  let worklogDateMonth = '';
+  let worklogDateDay = '';
+
+  // Beosztás (Schedule) lekérdezés
+  let scheduleYear = '';
+  let scheduleMonth = '';
+  let schedules = [];
+  let schedulesLoading = false;
+  let schedulesError = '';
+  let scheduleSummary = { totalPlannedHours: 0, totalPlannedDays: 0 };
+
+  let scheduleDay = '';
+  let schedulesByDay = [];
+  let schedulesByDayLoading = false;
+  let schedulesByDayError = '';
+
+  async function fetchSchedulesByMonth() {
+    schedulesLoading = true;
+    schedulesError = '';
+    schedules = [];
+    scheduleSummary = { totalPlannedHours: 0, totalPlannedDays: 0 };
+    try {
+      const url = `${API_BASE}/Admin/schedules/${scheduleYear}/${scheduleMonth}`;
+      const response = await authFetch(url, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error('Hiba a beosztások lekérdezésekor');
+      schedules = await response.json();
+    } catch (err) {
+      schedulesError = err.message;
+    }
+    schedulesLoading = false;
+  }
+
+  async function fetchSchedulesByDay() {
+    schedulesByDayLoading = true;
+    schedulesByDayError = '';
+    schedulesByDay = [];
+    try {
+      const url = `${API_BASE}/Admin/schedules/date/${scheduleYear}/${scheduleMonth}/${scheduleDay}`;
+      const response = await authFetch(url, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error('Hiba a napi beosztások lekérdezésekor');
+      schedulesByDay = await response.json();
+    } catch (err) {
+      schedulesByDayError = err.message;
+    }
+    schedulesByDayLoading = false;
+  }
 
   // Havi riport összes dolgozóra
   let monthlyYear = '';
@@ -878,6 +685,59 @@
       monthlyEmployeeReportError = err.message;
     }
     monthlyEmployeeReportLoading = false;
+  }
+
+  // Segédfüggvény a summary-hoz
+  function worklogsByMonthSummary(worklogs) {
+    if (!worklogs) return { workdays: 0, plannedWorkdays: 0, totalOvertime: 0 };
+    let workdays = worklogs.length;
+    let plannedWorkdays = worklogs.filter(w => w.plannedWorkHours > 0).length;
+    let totalOvertime = worklogs.reduce((sum, w) => sum + (w.overtimeHours || 0), 0);
+    return { workdays, plannedWorkdays, totalOvertime };
+  }
+
+  // Jogosultság ellenőrzés és adatlekérés csak böngészőben, onMount-ban!
+  onMount(() => {
+    if (!token || !userRole || userRole.toLowerCase() !== 'admin') {
+      if (!token || !userRole) {
+        goto('/');
+      } else if (userRole.toLowerCase() === 'employee') {
+        goto('/dashboard/employee');
+      } else if (userRole.toLowerCase() === 'manager') {
+        goto('/dashboard/manager');
+      } else {
+        goto('/');
+      }
+    }
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    statusDate = `${yyyy}-${mm}-${dd}`;
+  });
+
+  function formatDateTime(dt) {
+    if (!dt) return '';
+    const match = dt.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})/);
+    if (match) return `${match[1]} ${match[2]}`;
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dt)) return dt;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dt)) return dt + ' 00:00:00';
+    if (/^\d{2}:\d{2}:\d{2}$/.test(dt)) return '';
+    return dt;
+  }
+
+  function statusToHungarian(status) {
+    if (!status) return '';
+    switch (status.toLowerCase()) {
+      case 'active': return 'Aktív';
+      case 'inactive': return 'Inaktív';
+      default: return status;
+    }
+  }
+
+  function formatNumber2(val) {
+    if (val === null || val === undefined || isNaN(val)) return '';
+    return Number(val).toFixed(2).replace(/\.00$/, '');
   }
 </script>
 
@@ -932,9 +792,9 @@
               <tr>
                 <td>{cp.checkpointId}</td>
                 <td>{cp.employeeId}</td>
-                <td>{cp.checkInTime}</td>
-                <td>{cp.checkOutTime}</td>
-                <td>{cp.sessionStatus}</td>
+                <td>{formatDateTime(cp.checkInTime)}</td>
+                <td>{formatDateTime(cp.checkOutTime)}</td>
+                <td>{statusToHungarian(cp.sessionStatus)}</td>
               </tr>
             {/each}
           </tbody>
@@ -980,9 +840,9 @@
               <tr>
                 <td>{cp.checkpointId}</td>
                 <td>{cp.employeeId}</td>
-                <td>{cp.checkInTime}</td>
-                <td>{cp.checkOutTime}</td>
-                <td>{cp.sessionStatus}</td>
+                <td>{formatDateTime(cp.checkInTime)}</td>
+                <td>{formatDateTime(cp.checkOutTime)}</td>
+                <td>{statusToHungarian(cp.sessionStatus)}</td>
               </tr>
             {/each}
           </tbody>
@@ -1117,7 +977,6 @@
   {/if}
 
   {#if activeTab === 'monthly'}
-    <!-- Összes dolgozó havi riportja év/hónap szerint -->
     <div class="api-row api-row-column">
       <div class="api-description">Havi riport lekérdezése év és hónap szerint (összes dolgozó):</div>
       <form class="api-action-form form-inline-group" on:submit|preventDefault={fetchMonthlyReportByDate}>
@@ -1151,35 +1010,36 @@
                   <td>{row.fullName}</td>
                   <td>{row.reportMonth?.slice(0,7) ?? ''}</td>
                   <td>{row.date && row.date !== '0001-01-01' && row.date !== null && row.date !== '' ? row.date : ''}</td>
-                  <td>{row.workHours?.toFixed(2) ?? ''}</td>
-                  <td>{row.overtimeHours?.toFixed(2) ?? ''}</td>
+                  <td>{formatNumber2(row.workHours)}</td>
+                  <td>{formatNumber2(row.overtimeHours)}</td>
                 </tr>
               {/each}
             </tbody>
           </table>
           {#if monthlyReportData.length > 0}
-            <table class="summary-table">
-              <tbody>
-                <tr>
-                  <td>Havi munkanapok</td>
-                  <td>{monthlyReportData.reduce((sum, r) => sum + (r.monthlyWorkDays ?? 0), 0)}</td>
-                </tr>
-                <tr>
-                  <td>Havi munkaórák</td>
-                  <td>{monthlyReportData.reduce((sum, r) => sum + (r.monthlyWorkHours ?? 0), 0).toFixed(2)}</td>
-                </tr>
-                <tr>
-                  <td>Havi túlórák</td>
-                  <td>{monthlyReportData.reduce((sum, r) => sum + (r.monthlyOvertimeHours ?? 0), 0).toFixed(2)}</td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="api-row api-row-column summary-table-container">
+              <table class="summary-table fill-width">
+                <tbody>
+                  <tr>
+                    <td>Havi munkanapok</td>
+                    <td>{monthlyReportData.reduce((sum, r) => sum + (r.monthlyWorkDays ?? 0), 0)}</td>
+                  </tr>
+                  <tr>
+                    <td>Havi munkaórák</td>
+                    <td>{formatNumber2(monthlyReportData.reduce((sum, r) => sum + (r.monthlyWorkHours ?? 0), 0))}</td>
+                  </tr>
+                  <tr>
+                    <td>Havi túlórák</td>
+                    <td>{formatNumber2(monthlyReportData.reduce((sum, r) => sum + (r.monthlyOvertimeHours ?? 0), 0))}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           {/if}
         </div>
       {/if}
     </div>
 
-    <!-- Egy dolgozó havi riportja év/hónap szerint -->
     <div class="api-row api-row-column">
       <div class="api-description">Havi riport lekérdezése dolgozó szerint:</div>
       <form class="api-action-form form-inline-group" on:submit|preventDefault={fetchMonthlyReportByEmployee}>
@@ -1216,8 +1076,8 @@
                     <td>{row.fullName}</td>
                     <td>{row.reportMonth?.slice(0,7) ?? ''}</td>
                     <td>{row.date && row.date !== '0001-01-01' && row.date !== null && row.date !== '' ? row.date : ''}</td>
-                    <td>{row.workHours?.toFixed(2) ?? ''}</td>
-                    <td>{row.overtimeHours?.toFixed(2) ?? ''}</td>
+                    <td>{formatNumber2(row.workHours)}</td>
+                    <td>{formatNumber2(row.overtimeHours)}</td>
                   </tr>
                 {/each}
               {:else}
@@ -1226,31 +1086,198 @@
                   <td>{monthlyEmployeeReportData.fullName}</td>
                   <td>{monthlyEmployeeReportData.reportMonth?.slice(0,7) ?? ''}</td>
                   <td>{monthlyEmployeeReportData.date && monthlyEmployeeReportData.date !== '0001-01-01' && monthlyEmployeeReportData.date !== null && monthlyEmployeeReportData.date !== '' ? monthlyEmployeeReportData.date : ''}</td>
-                  <td>{monthlyEmployeeReportData.workHours?.toFixed(2) ?? ''}</td>
-                  <td>{monthlyEmployeeReportData.overtimeHours?.toFixed(2) ?? ''}</td>
+                  <td>{formatNumber2(monthlyEmployeeReportData.workHours)}</td>
+                  <td>{formatNumber2(monthlyEmployeeReportData.overtimeHours)}</td>
                 </tr>
                 {/if}
               </tbody>
             </table>
             {#if Array.isArray(monthlyEmployeeReportData) && monthlyEmployeeReportData.length > 0}
-            <table class="summary-table">
-              <tbody>
-                <tr>
-                  <td>Havi munkanapok</td>
-                  <td>{monthlyEmployeeReportData[0].monthlyWorkDays}</td>
-                </tr>
-                <tr>
-                  <td>Havi munkaórák</td>
-                  <td>{monthlyEmployeeReportData[0].monthlyWorkHours?.toFixed(2)}</td>
-                </tr>
-                <tr>
-                  <td>Havi túlórák</td>
-                  <td>{monthlyEmployeeReportData[0].monthlyOvertimeHours?.toFixed(2)}</td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="api-row api-row-column summary-table-container">
+              <table class="summary-table fill-width">
+                <tbody>
+                  <tr>
+                    <td>Havi munkanapok</td>
+                    <td>{monthlyEmployeeReportData[0].monthlyWorkDays}</td>
+                  </tr>
+                  <tr>
+                    <td>Havi munkaórák</td>
+                    <td>{formatNumber2(monthlyEmployeeReportData[0].monthlyWorkHours)}</td>
+                  </tr>
+                  <tr>
+                    <td>Havi túlórák</td>
+                    <td>{formatNumber2(monthlyEmployeeReportData[0].monthlyOvertimeHours)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           {/if}
         </div>
+      {/if}
+    </div>
+  {/if}
+
+  {#if activeTab === 'report'}
+    <div class="api-row api-row-column">
+      <div class="api-description">Havi kimutatás</div>
+      <form class="api-action-form form-inline-group" on:submit|preventDefault={() => fetchWorklogsByMonth(monthlyYear, monthlyMonth)}>
+        <label for="worklog-year">Év:</label>
+        <input id="worklog-year" type="number" bind:value={monthlyYear} min="2024" max="2070" required placeholder="Pl. 2025" class="checkpoint-input" />
+        <label for="worklog-month">Hónap:</label>
+        <input id="worklog-month" type="number" bind:value={monthlyMonth} min="1" max="12" required placeholder="1-12" class="checkpoint-input" />
+        <button type="submit" class="primary-action">Lekérés</button>
+      </form>
+      {#if worklogsByMonthLoading}
+        <div>Betöltés...</div>
+      {:else if worklogsByMonthError}
+        <div class="error">{worklogsByMonthError}</div>
+      {:else if worklogsByMonth && worklogsByMonth.length > 0}
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Dolgozó azonosító</th>
+              <th>Dolgozó neve</th>
+              <th>Beosztás dátuma</th>
+              <th>Munkaórák</th>
+              <th>Túlórák</th>
+              <th>Tervezett munkaórák</th>
+              <th>Tervezett túlóra</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each worklogsByMonth as row}
+              <tr>
+                <td>{row.employeeId}</td>
+                <td>{row.fullName}</td>
+                <td>{row.scheduledDate}</td>
+                <td>{formatNumber2(row.workHours)}</td>
+                <td>{formatNumber2(row.overtimeHours)}</td>
+                <td>{formatNumber2(row.scheduledHours)}</td>
+                <td>{formatNumber2(row.scheduledOvertime)}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+        <div class="api-row api-row-column summary-table-container">
+          <table class="summary-table fill-width">
+            <tbody>
+              <tr>
+                <td>Havi munkanapok</td>
+                <td>{worklogsByMonth[0]?.monthlyWorkDays ?? '-'}</td>
+              </tr>
+              <tr>
+                <td>Tervezett munkanapok</td>
+                <td>{worklogsByMonth[0]?.scheduledWorkDays ?? '-'}</td>
+              </tr>
+              <tr>
+                <td>Havi túlóra</td>
+                <td>{formatNumber2(worklogsByMonth[0]?.monthlyOvertimeHours ?? 0)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      {/if}
+      <div class="api-description">Havi kimutatás dolgozó azonosító alapján</div>
+      <form class="api-action-form form-inline-group" on:submit|preventDefault={() => fetchWorklogsByEmployee(worklogEmployeeId, worklogEmployeeYear, worklogEmployeeMonth)}>
+        <label for="worklog-employee-id">Dolgozó azonosító:</label>
+        <input id="worklog-employee-id" type="number" bind:value={worklogEmployeeId} min="1" required placeholder="Pl. 123" class="checkpoint-input" />
+        <label for="worklog-employee-year">Év:</label>
+        <input id="worklog-employee-year" type="number" bind:value={worklogEmployeeYear} min="2024" max="2070" required placeholder="Pl. 2025" class="checkpoint-input" />
+        <label for="worklog-employee-month">Hónap:</label>
+        <input id="worklog-employee-month" type="number" bind:value={worklogEmployeeMonth} min="1" max="12" required placeholder="1-12" class="checkpoint-input" />
+        <button type="submit" class="primary-action">Lekérés</button>
+      </form>
+      {#if worklogsByEmployeeLoading}
+        <div>Betöltés...</div>
+      {:else if worklogsByEmployeeError}
+        <div class="error">{worklogsByEmployeeError}</div>
+      {:else if worklogsByEmployee && worklogsByEmployee.length > 0}
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Dolgozó azonosító</th>
+              <th>Dolgozó neve</th>
+              <th>Beosztás dátuma</th>
+              <th>Munkaórák</th>
+              <th>Túlórák</th>
+              <th>Tervezett munkaórák</th>
+              <th>Tervezett túlóra</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each worklogsByEmployee as row}
+              <tr>
+                <td>{row.employeeId}</td>
+                <td>{row.fullName}</td>
+                <td>{row.scheduledDate}</td>
+                <td>{formatNumber2(row.workHours)}</td>
+                <td>{formatNumber2(row.overtimeHours)}</td>
+                <td>{formatNumber2(row.scheduledHours)}</td>
+                <td>{formatNumber2(row.scheduledOvertime)}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+        <div class="api-row api-row-column summary-table-container">
+          <table class="summary-table fill-width">
+            <tbody>
+              <tr>
+                <td>Havi munkanapok</td>
+                <td>{worklogsByEmployee[0]?.monthlyWorkDays ?? '-'}</td>
+              </tr>
+              <tr>
+                <td>Tervezett munkanapok</td>
+                <td>{worklogsByEmployee[0]?.scheduledWorkDays ?? '-'}</td>
+              </tr>
+              <tr>
+                <td>Havi túlóra</td>
+                <td>{formatNumber2(worklogsByEmployee[0]?.monthlyOvertimeHours ?? 0)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      {/if}
+     <div class="api-description">Dátum szerinti kimutatás</div>
+      <form class="api-action-form form-inline-group" on:submit|preventDefault={() => fetchWorklogsByDate(worklogDateYear, worklogDateMonth, worklogDateDay)}>
+        <label for="worklog-date-year">Év:</label>
+        <input id="worklog-date-year" type="number" bind:value={worklogDateYear} min="2024" max="2070" required placeholder="Pl. 2025" class="checkpoint-input" />
+        <label for="worklog-date-month">Hónap:</label>
+        <input id="worklog-date-month" type="number" bind:value={worklogDateMonth} min="1" max="12" required placeholder="1-12" class="checkpoint-input" />
+        <label for="worklog-date-day">Nap:</label>
+        <input id="worklog-date-day" type="number" bind:value={worklogDateDay} min="1" max="31" required placeholder="1-31" class="checkpoint-input" />
+        <button type="submit" class="primary-action">Lekérés</button>
+      </form>
+      {#if worklogsByDateLoading}
+        <div>Betöltés...</div>
+      {:else if worklogsByDateError}
+        <div class="error">{worklogsByDateError}</div>
+      {:else if worklogsByDate && worklogsByDate.length > 0}
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Dolgozó azonosító</th>
+              <th>Dolgozó neve</th>
+              <th>Beosztás dátuma</th>
+              <th>Munkaórák</th>
+              <th>Túlórák</th>
+              <th>Tervezett munkaórák</th>
+              <th>Tervezett túlóra</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each worklogsByDate as row}
+              <tr>
+                <td>{row.employeeId}</td>
+                <td>{row.fullName}</td>
+                <td>{row.scheduledDate}</td>
+                <td>{formatNumber2(row.workHours)}</td>
+                <td>{formatNumber2(row.overtimeHours)}</td>
+                <td>{formatNumber2(row.scheduledHours)}</td>
+                <td>{formatNumber2(row.scheduledOvertime)}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
       {/if}
     </div>
   {/if}
@@ -1258,119 +1285,116 @@
   {#if activeTab === 'schedule'}
     <div class="api-row api-row-column">
       <div class="api-description">
-        Beosztás lekérdezése (dátum, dolgozó):
+        Havi beosztások lekérdezése
       </div>
-      <form class="api-action-form">
-        <div class="form-inline-group">
-          <label for="schedule-date">Dátum:</label>
-          <input type="date" id="schedule-date" name="scheduleDate" class="checkpoint-input" />
+      <form class="api-action-form form-inline-group" on:submit|preventDefault={fetchSchedulesByMonth}>
+        <label for="schedule-year">Év:</label>
+        <input id="schedule-year" type="number" bind:value={scheduleYear} min="2020" max="2070" required placeholder="Pl. 2025" class="checkpoint-input" />
+        <label for="schedule-month">Hónap:</label>
+        <input id="schedule-month" type="number" bind:value={scheduleMonth} min="1" max="12" required placeholder="1-12" class="checkpoint-input" />
+        <div class="form-btn-col">
+          <button type="submit" class="primary-action">Lekérés</button>
         </div>
-        <div class="form-inline-group">
-          <label for="user-id-schedule">Dolgozó azonosító:</label>
-          <input type="text" id="user-id-schedule" name="userIdSchedule" placeholder="Pl. 123" class="checkpoint-input" />
-        </div>
-        <button type="submit" class="primary-action">Lekérés</button>
       </form>
-    </div>
-    <div class="data-table-wrapper">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Dolgozó azonosító</th>
-            <th>Dátum</th>
-            <th>Kezdési időpont</th>
-            <th>Befejezési időpont</th>
-            <th>Típus</th>
-            <th>Tervezett munkaórák</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>123</td>
-            <td>2025-04-27</td>
-            <td>08:00</td>
-            <td>16:00</td>
-            <td>Nappali</td>
-            <td>8</td>
-          </tr>
-        </tbody>
-      </table>
-      <table class="summary-table">
-        <tbody>
-          <tr>
-            <td>Tervezett havi munkaórák</td>
-            <td>168</td>
-          </tr>
-          <tr>
-            <td>Tervezett havi munkanapok</td>
-            <td>21</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  {/if}
-
-  {#if activeTab === 'report'}
+      {#if schedulesLoading}
+        <div>Betöltés...</div>
+      {:else if schedulesError}
+        <div class="error">{schedulesError}</div>
+      {:else if schedules && schedules.length > 0}
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Dolgozó azonosító</th>
+                <th>Dolgozó neve</th>
+                <th>Beosztás dátuma</th>
+                <th>Kezdési időpont</th>
+                <th>Befejezési időpont</th>
+                <th>Típus</th>
+                <th>Tervezett munkaórák</th>
+              </tr>
+            </thead>
+          <tbody>
+            {#each schedules as row}
+              <tr>
+                <td>{row.employeeId}</td>
+                <td>{row.fullName}</td>
+                <td>{row.scheduledDate}</td>
+                <td>{row.startTime}</td>
+                <td>{row.endTime}</td>
+                <td>{row.type}</td>
+                <td>{formatNumber2(row.scheduledHours)}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+        <div class="api-row api-row-column summary-table-container">
+          <table class="summary-table fill-width">
+            <tbody>
+              <tr>
+                <td>Tervezett havi munkaórák</td>
+                <td>{formatNumber2(schedules.length > 0 ? schedules[schedules.length-1].scheduledMonthlyHours : 0)}</td>
+              </tr>
+              <tr>
+                <td>Tervezett havi munkanapok</td>
+                <td>{schedules.length > 0 ? schedules[schedules.length-1].scheduledWorkDays : 0}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        </div>
+        {/if}
+      </div>
     <div class="api-row api-row-column">
-      <div class="api-description">
-        Kimutatás lekérdezése (dátum, dolgozó):
-      </div>
-      <form class="api-action-form">
-        <div class="form-inline-group">
-          <label for="report-date">Dátum:</label>
-          <input type="date" id="report-date" name="reportDate" class="checkpoint-input" />
+      <div class="api-description">Napi beosztások lekérdezése</div>
+      <form class="api-action-form form-inline-group" on:submit|preventDefault={fetchSchedulesByDay}>
+        <label for="schedule-year-day">Év:</label>
+        <input id="schedule-year-day" type="number" bind:value={scheduleYear} min="2020" max="2070" required placeholder="Pl. 2025" class="checkpoint-input" />
+        <label for="schedule-month-day">Hónap:</label>
+        <input id="schedule-month-day" type="number" bind:value={scheduleMonth} min="1" max="12" required placeholder="1-12" class="checkpoint-input" />
+        <label for="schedule-day">Nap:</label>
+        <input id="schedule-day" type="number" bind:value={scheduleDay} min="1" max="31" required placeholder="1-31" class="checkpoint-input" />
+        <div class="form-btn-col">
+          <button type="submit" class="primary-action">Lekérés</button>
         </div>
-        <div class="form-inline-group">
-          <label for="user-id-report">Dolgozó azonosító:</label>
-          <input type="text" id="user-id-report" name="userIdReport" placeholder="Pl. 123" class="checkpoint-input" />
-        </div>
-        <button type="submit" class="primary-action">Lekérés</button>
       </form>
-    </div>
-    <div class="data-table-wrapper">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Dolgozó azonosító</th>
-            <th>Dátum</th>
-            <th>Munkaóra</th>
-            <th>Túlóra</th>
-            <th>Tervezett munkaóra</th>
-            <th>Tervezett túlóra</th>
-            <th>Típus</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>123</td>
-            <td>2025-04-27</td>
-            <td>8</td>
-            <td>2</td>
-            <td>8</td>
-            <td>1</td>
-            <td>Nappali</td>
-          </tr>
-        </tbody>
-      </table>
-      <table class="summary-table">
-        <tbody>
-          <tr>
-            <td>Havi munkanapok</td>
-            <td>20</td>
-          </tr>
-          <tr>
-            <td>Tervezett havi munkanapok</td>
-            <td>21</td>
-          </tr>
-          <tr>
-            <td>Havi túlórák</td>
-            <td>12</td>
-          </tr>
-        </tbody>
-      </table>
+      {#if schedulesByDayLoading}
+        <div>Betöltés...</div>
+      {:else if schedulesByDayError}
+        <div class="error">{schedulesByDayError}</div>
+      {:else if schedulesByDay && schedulesByDay.length > 0}
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Dolgozó azonosító</th>
+                <th>Dolgozó neve</th>
+                <th>Beosztás dátuma</th>
+                <th>Kezdési időpont</th>
+                <th>Befejezési időpont</th>
+                <th>Típus</th>
+                <th>Tervezett munkaórák</th>
+              </tr>
+            </thead>
+          <tbody>
+            {#each schedulesByDay as row}
+              <tr>
+                <td>{row.employeeId}</td>
+                <td>{row.fullName}</td>
+                <td>{row.scheduledDate}</td>
+                <td>{row.startTime}</td>
+                <td>{row.endTime}</td>
+                <td>{row.type}</td>
+                <td>{formatNumber2(row.scheduledHours)}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+      {/if}
     </div>
   {/if}
-
+ 
   {#if activeTab === 'dashboard'}
     <div class="api-row api-row-column">
       <div class="api-description">Az összes dolgozó adata:</div>
@@ -1451,9 +1475,9 @@
       {/if}
     </div>
     <div class="api-row api-row-column">
-      <div class="api-description">Dolgozók lekérdezése szerep szerint:</div>
+      <div class="api-description">Dolgozók lekérdezése jogkör szerint:</div>
       <form class="api-action-form" on:submit|preventDefault={() => { fetchEmployeesByRole(); }}>
-        <label for="role-select">Szerep:</label>
+        <label for="role-select">Jogkör:</label>
         <select id="role-select" bind:value={selectedRole} class="checkpoint-input">
           {#each roleOptions as opt}
             <option value={opt.value}>{opt.label}</option>
@@ -1534,12 +1558,12 @@
         <label for="new-username">Felhasználónév:</label>
         <input id="new-username" type="text" bind:value={newUsername} required placeholder="Pl. kiss" class="checkpoint-input" />
         <label for="new-password">Jelszó:</label>
-        <input id="new-password" type="password" bind:value={newPassword} required placeholder="Jelszó" size="15" style="max-width: 180px;" class="checkpoint-input" />
+        <input id="new-password" type="password" bind:value={newPassword} required placeholder="Jelszó" class="checkpoint-input" />
         <label for="new-userrole">Jogkör:</label>
-        <select id="new-userrole" bind:value={newUserRole} required class="checkpoint-input">
-          <option value="Employee">Dolgozó</option>
-          <option value="Manager">Manager</option>
-          <option value="Admin">Admin</option>
+        <select id="role-select" bind:value={selectedRole} class="checkpoint-input">
+          {#each roleOptions as opt}
+            <option value={opt.value}>{opt.label}</option>
+          {/each}
         </select>
         <button type="submit" class="primary-action" disabled={addEmployeeLoading}>Hozzáadás</button>
       </form>
@@ -1555,7 +1579,7 @@
       <div class="api-description">Dolgozó teljes nevének módosítása:</div>
       <form class="api-action-form form-inline-group" on:submit|preventDefault={updateEmployeeFullname}>
         <label for="update-fullname-id">Azonosító:</label>
-        <input id="update-fullname-id" type="number" bind:value={updateFullnameId} required placeholder="Pl. 100" min="1" size="6" style="max-width: 110px;" class="checkpoint-input" />
+        <input id="update-fullname-id" type="number" bind:value={updateFullnameId} required placeholder="Pl. 100" min="1" class="checkpoint-input" />
         <label for="update-fullname-old">Régi teljes név:</label>
         <input id="update-fullname-old" type="text" bind:value={updateFullnameOld} required placeholder="Pl. Kiss Ádám" class="checkpoint-input" />
         <label for="update-fullname-new">Új teljes név:</label>
@@ -1574,7 +1598,7 @@
       <div class="api-description">Dolgozó felhasználónevének módosítása:</div>
       <form class="api-action-form form-inline-group" on:submit|preventDefault={updateEmployeeUsername}>
         <label for="update-username-id">Azonosító:</label>
-        <input id="update-username-id" type="number" bind:value={updateUsernameId} required placeholder="Pl. 100" min="1" size="6" style="max-width: 110px;" class="checkpoint-input" />
+        <input id="update-username-id" type="number" bind:value={updateUsernameId} required placeholder="Pl. 100" min="1" class="checkpoint-input" />
         <label for="update-username-old">Régi felhasználónév:</label>
         <input id="update-username-old" type="text" bind:value={updateUsernameOld} required placeholder="Pl. nagy" class="checkpoint-input" />
         <label for="update-username-new">Új felhasználónév:</label>
@@ -1593,11 +1617,11 @@
       <div class="api-description">Dolgozó jelszavának módosítása:</div>
       <form class="api-action-form form-inline-group" on:submit|preventDefault={updateEmployeePassword}>
         <label for="update-password-id">Azonosító:</label>
-        <input id="update-password-id" type="number" bind:value={updatePasswordId} required placeholder="Pl. 100" min="1" size="6" style="max-width: 110px;" class="checkpoint-input" />
+        <input id="update-password-id" type="number" bind:value={updatePasswordId} required placeholder="Pl. 100" min="1" class="checkpoint-input" />
         <label for="update-password-username">Felhasználónév:</label>
         <input id="update-password-username" type="text" bind:value={updatePasswordUsername} required placeholder="Pl. nagy" class="checkpoint-input" />
         <label for="update-password-new">Új jelszó:</label>
-        <input id="update-password-new" type="password" bind:value={updatePasswordNew} required placeholder="Új jelszó" style="max-width: 180px;" class="checkpoint-input" />
+        <input id="update-password-new" type="password" bind:value={updatePasswordNew} required placeholder="Új jelszó" class="checkpoint-input" />
         <button type="submit" class="primary-action" disabled={updatePasswordLoading}>Módosítás</button>
       </form>
       {#if updatePasswordLoading}
@@ -1612,12 +1636,12 @@
       <div class="api-description">Dolgozó jogkörének módosítása:</div>
       <form class="api-action-form form-inline-group" on:submit|preventDefault={updateEmployeeRole}>
         <label for="update-role-id">Azonosító:</label>
-        <input id="update-role-id" type="number" bind:value={updateRoleId} required placeholder="Pl. 100" min="1" size="6" style="max-width: 110px;" class="checkpoint-input" />
+        <input id="update-role-id" type="number" bind:value={updateRoleId} required placeholder="Pl. 100" min="1" class="checkpoint-input" />
         <label for="update-role-new">Új jogkör:</label>
-        <select id="update-role-new" bind:value={updateRoleNew} required class="checkpoint-input">
-          <option value="Employee">Dolgozó</option>
-          <option value="Manager">Manager</option>
-          <option value="Admin">Admin</option>
+        <select id="role-select" bind:value={selectedRole} class="checkpoint-input">
+          {#each roleOptions as opt}
+            <option value={opt.value}>{opt.label}</option>
+          {/each}
         </select>
         <button type="submit" class="primary-action" disabled={updateRoleLoading}>Módosítás</button>
       </form>
@@ -1633,7 +1657,7 @@
       <div class="api-description">Dolgozó törlése:</div>
       <form class="api-action-form form-inline-group" on:submit|preventDefault={() => showDeleteConfirm = true}>
         <label for="delete-employee-id">Azonosító:</label>
-        <input id="delete-employee-id" type="number" bind:value={deleteEmployeeId} required placeholder="Pl. 100" min="1" size="6" style="max-width: 110px;" class="checkpoint-input" />
+        <input id="delete-employee-id" type="number" bind:value={deleteEmployeeId} required placeholder="Pl. 100" min="1" class="checkpoint-input" />
         <button type="submit" class="danger-action" disabled={deleteEmployeeLoading}>Törlés</button>
       </form>
       {#if showDeleteConfirm}
@@ -1927,8 +1951,7 @@ gap: 1.2rem;
 #monthly-employee-id {
   width: 12ch;
 }
-.form-inline-group input,
-.form-inline-group .checkpoint-input {
+.form-inline-group input:not(.checkpoint-input) {
   max-width: unset !important;
   min-width: unset !important;
   width: auto;
@@ -1960,5 +1983,40 @@ select.checkpoint-input:focus {
 .checkpoint-input option {
   background: var(--color-table-bg, #fff);
   color: var(--color-table-placeholder, #bdbfff) !important;
+}
+.summary-table.fill-width {
+  width: 100%;
+}
+.api-action-form.form-inline-group {
+  width: 100%;
+  min-width: 400px;
+}
+.primary-action {
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 0.7rem;
+  padding: 0.42rem 0.8rem;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.3rem;
+  min-width: 80px;
+  max-width: 220px;
+  cursor: pointer;
+}
+.primary-action:disabled {
+  background: var(--color-table-placeholder, #bdbfff);
+  cursor: not-allowed;
+}
+@media (max-width: 1100px) {
+  .primary-action {
+    margin-top: 0.5rem;
+    align-self: center;
+  }
 }
 </style>

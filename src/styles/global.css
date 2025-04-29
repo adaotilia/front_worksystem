@@ -531,3 +531,17 @@ select {
   background-size: 1.1em;
   padding-right: 2.2em;
 }
+
+/* --- SUMMARY TABLE: visszaállítás, hogy ugyanolyan legyen, mint a felette lévő táblázat --- */
+.summary-table-container {
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+  box-sizing: border-box;
+}
+.summary-table,
+.summary-table.fill-width {
+  width: 100%;
+  max-width: none;
+  table-layout: auto;
+}
