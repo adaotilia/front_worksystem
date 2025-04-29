@@ -1,0 +1,2 @@
+/_app/*    /_app/:splat    200
+/*         /.netlify/functions/sveltekit-render   200
