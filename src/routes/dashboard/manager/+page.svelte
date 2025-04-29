@@ -57,7 +57,7 @@
 
   // Új változók a státusz lekérdezéshez
   let statusEmployeeId = '';
-  let statusDate = '';
+  let statusDate = new Date().toISOString().slice(0, 10); // Alapértelmezett: mai nap
   let statusResult = null;
   let statusLoading = false;
   let statusError = '';
@@ -88,6 +88,26 @@
   let userByUsername = null;
   let userByUsernameLoading = false;
   let userByUsernameError = '';
+
+  async function fetchUserByUsername() {
+    userByUsernameLoading = true;
+    userByUsernameError = '';
+    userByUsername = null;
+    try {
+      const response = await authFetch(`${API_BASE}/employees/username/${usernameInput}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) {
+        const err = await response.text();
+        throw new Error(err || 'Ismeretlen hiba');
+      }
+      userByUsername = await response.json();
+    } catch (err) {
+      userByUsernameError = err.message || 'Ismeretlen hiba';
+    } finally {
+      userByUsernameLoading = false;
+    }
+  }
 
   // --- Havi munka tab változók ---
   let monthlyYear = '';
@@ -136,31 +156,6 @@
     employeesByRoleLoading = false;
   }
 
-  async function fetchUserByUsername() {
-    if (!usernameInput) {
-      userByUsernameError = 'Kötelező megadni a felhasználónevet!';
-      userByUsername = null;
-      return;
-    }
-    userByUsernameLoading = true;
-    userByUsernameError = '';
-    userByUsername = null;
-    try {
-      const response = await authFetch(`${API_BASE}/Manager/employees/username/${usernameInput}`, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!response.ok) throw new Error('Hiba a dolgozó lekérdezésekor');
-      userByUsername = await response.json();
-    } catch (err) {
-      userByUsernameError = err.message;
-      userByUsername = null;
-    }
-    userByUsernameLoading = false;
-  }
-
-  // --- Havi munka tab API-k ---
   async function fetchMonthlyReportByDate() {
     monthlyReportLoading = true;
     monthlyReportError = '';
@@ -325,6 +320,31 @@
     worklogsByDateLoading = false;
   }
 
+  // Új: Beosztás lekérdezése dolgozó, év, hónap alapján (Manager)
+  let scheduleEmployeeId = '';
+  let scheduleEmployeeYear = '';
+  let scheduleEmployeeMonth = '';
+  let schedulesByEmployee = [];
+  let schedulesByEmployeeLoading = false;
+  let schedulesByEmployeeError = '';
+
+  async function fetchSchedulesByEmployee() {
+    schedulesByEmployeeLoading = true;
+    schedulesByEmployeeError = '';
+    schedulesByEmployee = [];
+    try {
+      const url = `${API_BASE}/Manager/schedules/employee/${scheduleEmployeeId}/${scheduleEmployeeYear}/${scheduleEmployeeMonth}`;
+      const response = await authFetch(url, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error('Hiba a beosztások lekérdezésekor');
+      schedulesByEmployee = await response.json();
+    } catch (err) {
+      schedulesByEmployeeError = err.message;
+    }
+    schedulesByEmployeeLoading = false;
+  }
+
   function handleLogout() {
     auth.logout();
     goto('/');
@@ -352,6 +372,67 @@
   function formatNumber2(val) {
     if (val === null || val === undefined || isNaN(val)) return '';
     return Number(val).toFixed(2).replace(/\.00$/, '');
+  }
+
+  // Jelszó módosítás változók
+  let employeeId = '';
+  let oldPassword = '';
+  let newPassword = '';
+  let confirmNewPassword = '';
+  let changePasswordLoading = false;
+  let changePasswordError = '';
+  let changePasswordSuccess = '';
+
+  async function changeEmployeePassword() {
+    changePasswordLoading = true;
+    changePasswordError = '';
+    changePasswordSuccess = '';
+    if (newPassword !== confirmNewPassword) {
+      changePasswordError = 'Az új jelszavak nem egyeznek!';
+      changePasswordLoading = false;
+      return;
+    }
+    try {
+      const response = await authFetch(`${API_BASE}/Employee/employees/password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employeeId: Number(employeeId),
+          password: oldPassword,
+          newPassword: newPassword,
+          confirmNewPassword: confirmNewPassword
+        })
+      });
+      if (!response.ok) {
+        let errorMsg = 'Jelszó módosítása sikertelen.';
+        try {
+          const text = await response.text();
+          let data;
+          try { data = JSON.parse(text); } catch {}
+          if (data && typeof data === 'object') {
+            if (data.message) {
+              errorMsg = data.message;
+            } else if (data.title) {
+              errorMsg = data.title;
+              if (data.detail) errorMsg += ': ' + data.detail;
+            } else if (data.detail) {
+              errorMsg = data.detail;
+            }
+          } else if (text) {
+            errorMsg = text.split(/\.|\n/)[0].trim();
+          }
+        } catch {}
+        throw new Error(errorMsg);
+      }
+      changePasswordSuccess = 'Jelszó sikeresen módosítva!';
+      employeeId = '';
+      oldPassword = '';
+      newPassword = '';
+      confirmNewPassword = '';
+    } catch (err) {
+      changePasswordError = err.message;
+    }
+    changePasswordLoading = false;
   }
 </script>
 
@@ -490,42 +571,6 @@
             </tr>
           </tbody>
         </table>
-      {/if}
-    </div>
-    <div class="api-row api-row-column">
-      <div class="api-description">Dolgozó lekérdezése felhasználónév alapján:</div>
-      <form class="api-action-form form-inline-group" on:submit|preventDefault={() => { fetchUserByUsername(); }}>
-        <label for="username-input">Felhasználónév:</label>
-        <input id="username-input" type="text" bind:value={usernameInput} placeholder="Pl. nagy" required class="checkpoint-input" />
-        <div class="form-btn-col">
-          <button type="submit" class="primary-action">Lekérés</button>
-        </div>
-      </form>
-      {#if userByUsernameLoading}
-        <div>Dolgozó betöltése...</div>
-      {:else if userByUsernameError}
-        <div class="error">{userByUsernameError}</div>
-      {:else if userByUsername}
-        <div class="data-table-wrapper">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Dolgozó azonosító</th>
-                <th>Teljes név</th>
-                <th>Felhasználónév</th>
-                <th>Jogkör</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>{userByUsername.employeeId}</td>
-                <td>{userByUsername.fullName}</td>
-                <td>{userByUsername.username}</td>
-                <td>{userByUsername.userRole === 'Employee' ? 'Dolgozó' : userByUsername.userRole}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       {/if}
     </div>
   {/if}
@@ -875,6 +920,63 @@
     </div>
   {/if}
 
+  {#if activeTab === 'schedule'}
+    <div class="api-row api-row-column">
+      <div class="api-description">
+        Beosztás lekérdezése dolgozó, év és hónap szerint
+      </div>
+      <form class="api-action-form form-inline-group" on:submit|preventDefault={fetchSchedulesByEmployee}>
+        <label for="schedule-employee-id">Dolgozó azonosító:</label>
+        <input id="schedule-employee-id" type="number" bind:value={scheduleEmployeeId} min="1" required placeholder="Pl. 100" class="checkpoint-input" />
+        <label for="schedule-employee-year">Év:</label>
+        <input id="schedule-employee-year" type="number" bind:value={scheduleEmployeeYear} min="2020" max="2070" required placeholder="Pl. 2025" class="checkpoint-input" />
+        <label for="schedule-employee-month">Hónap:</label>
+        <input id="schedule-employee-month" type="number" bind:value={scheduleEmployeeMonth} min="1" max="12" required placeholder="1-12" class="checkpoint-input" />
+        <div class="form-btn-col">
+          <button type="submit" class="primary-action">Lekérés</button>
+        </div>
+      </form>
+      {#if schedulesByEmployeeLoading}
+        <div>Betöltés...</div>
+      {:else if schedulesByEmployeeError}
+        <div class="error">{schedulesByEmployeeError}</div>
+      {:else if schedulesByEmployee && schedulesByEmployee.length > 0}
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Dolgozó azonosító</th>
+                <th>Dolgozó neve</th>
+                <th>Beosztás dátuma</th>
+                <th>Kezdési időpont</th>
+                <th>Befejezési időpont</th>
+                <th>Típus</th>
+                <th>Tervezett munkaórák</th>
+                <th>Tervezett havi munkaórák</th>
+                <th>Tervezett havi munkanapok</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each schedulesByEmployee as row}
+                <tr>
+                  <td>{row.employeeId}</td>
+                  <td>{row.fullName}</td>
+                  <td>{row.scheduledDate}</td>
+                  <td>{row.startTime}</td>
+                  <td>{row.endTime}</td>
+                  <td>{row.type}</td>
+                  <td>{formatNumber2(row.scheduledHours)}</td>
+                  <td>{formatNumber2(row.scheduledMonthlyHours)}</td>
+                  <td>{row.scheduledWorkDays}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      {/if}
+    </div>
+  {/if}
+
   {#if activeTab === 'dashboard'}
     <div class="api-row api-row-column">
       <div class="api-description">Az összes dolgozó adata:</div>
@@ -1000,6 +1102,69 @@
             </tbody>
           </table>
         </div>
+      {/if}
+    </div>
+    <div class="api-row api-row-column">
+      <div class="api-description">Dolgozó lekérdezése felhasználónév alapján:</div>
+      <form class="api-action-form form-inline-group" on:submit|preventDefault={() => { fetchUserByUsername(); }}>
+        <label for="username-input">Felhasználónév:</label>
+        <input id="username-input" type="text" bind:value={usernameInput} placeholder="Pl. nagy" required class="checkpoint-input" />
+        <button type="submit" class="primary-action">Lekérés</button>
+      </form>
+      {#if userByUsernameLoading}
+        <div>Dolgozó betöltése...</div>
+      {:else if userByUsernameError}
+        <div class="error">{userByUsernameError}</div>
+      {:else if userByUsername}
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Dolgozó azonosító</th>
+                <th>Teljes név</th>
+                <th>Felhasználónév</th>
+                <th>Jogkör</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{userByUsername.employeeId}</td>
+                <td>{userByUsername.fullName}</td>
+                <td>{userByUsername.username}</td>
+                <td>{userByUsername.userRole === 'Employee' ? 'Dolgozó' : userByUsername.userRole}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      {/if}
+    </div>
+    <div class="api-row api-row-column">
+      <div class="api-description">Jelszó módosítása:</div>
+      <form class="api-action-form form-inline-group-2row" on:submit|preventDefault={changeEmployeePassword}>
+        <div class="form-inline-group">
+          <label for="employee-id">Azonosító:</label>
+          <input id="employee-id" type="number" bind:value={employeeId} required placeholder="Pl. 123" min="1" size="6" class="checkpoint-input" style="max-width: 110px;" />
+        </div>
+        <div class="form-inline-group">
+          <label for="old-password">Régi jelszó:</label>
+          <input id="old-password" type="password" bind:value={oldPassword} required placeholder="Régi jelszó" autocomplete="current-password" class="checkpoint-input" style="max-width: 180px;" />
+        </div>
+        <div class="form-inline-group">
+          <label for="new-password">Új jelszó:</label>
+          <input id="new-password" type="password" bind:value={newPassword} required placeholder="Új jelszó" autocomplete="new-password" class="checkpoint-input" style="max-width: 180px;" />
+        </div>
+        <div class="form-inline-group">
+          <label for="confirm-new-password">Új jelszó megerősítése:</label>
+          <input id="confirm-new-password" type="password" bind:value={confirmNewPassword} required placeholder="Új jelszó újra" autocomplete="new-password" class="checkpoint-input" style="max-width: 180px;" />
+        </div>
+        <button type="submit" class="primary-action" disabled={changePasswordLoading}>Jelszó módosítása</button>
+      </form>
+      {#if changePasswordLoading}
+        <div>Jelszó módosítása folyamatban...</div>
+      {:else if changePasswordError}
+        <div class="error">{changePasswordError}</div>
+      {:else if changePasswordSuccess}
+        <div class="success">{changePasswordSuccess}</div>
       {/if}
     </div>
   {/if}

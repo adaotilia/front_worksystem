@@ -72,8 +72,8 @@
   let updateCheckpointError = '';
 
   // Új változók a checkpoint törléséhez
-  let deleteCheckpointEmployeeId = '';
-  let deleteCheckpointId = '';
+  let deleteCheckpointEmployeeIdVar = '';
+  let deleteCheckpointIdVar = '';
   let deletingCheckpoint = false;
   let deleteCheckpointMessage = '';
   let deleteCheckpointError = '';
@@ -446,9 +446,7 @@
       const body = JSON.stringify(checkpointDto);
       const response = await authFetch(url, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body
       });
       if (!response.ok) {
@@ -479,38 +477,23 @@
     deleteCheckpointMessage = '';
     deleteCheckpointError = '';
     try {
-      if (!deleteCheckpointEmployeeId || !deleteCheckpointId) {
+      if (!deleteCheckpointEmployeeIdVar || !deleteCheckpointIdVar) {
         deleteCheckpointError = 'Minden mezőt ki kell tölteni!';
         deletingCheckpoint = false;
         return;
       }
-      const url = `${API_BASE}/Admin/checkpoints/${deleteCheckpointEmployeeId}/${deleteCheckpointId}`;
+      const url = `${API_BASE}/Admin/checkpoints/${deleteCheckpointEmployeeIdVar}/${deleteCheckpointIdVar}`;
       const response = await authFetch(url, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json'
         }
       });
-      if (!response.ok) {
-        let errorMsg = 'Hiba a checkpoint törlése során';
-        try {
-          const text = await response.text();
-          let data;
-          try {
-            data = JSON.parse(text);
-          } catch {}
-          if (data && typeof data === 'object' && data.message) {
-            errorMsg = data.message;
-          } else if (text) {
-            errorMsg = text.split(/\.|\n/)[0].trim();
-          }
-        } catch {}
-        throw new Error(errorMsg);
-      }
+      if (!response.ok && response.status !== 204) throw new Error('Hiba a checkpoint törlésekor');
       deleteCheckpointMessage = 'Checkpoint sikeresen törölve!';
       // Mezők ürítése
-      deleteCheckpointEmployeeId = '';
-      deleteCheckpointId = '';
+      deleteCheckpointEmployeeIdVar = '';
+      deleteCheckpointIdVar = '';
     } catch (err) {
       deleteCheckpointError = err.message;
     }
@@ -642,6 +625,91 @@
     schedulesByDayLoading = false;
   }
 
+  // Új változók a dolgozó, év, hónap alapján történő beosztás lekérdezéshez
+  let scheduleEmployeeId = '';
+  let scheduleEmployeeYear = '';
+  let scheduleEmployeeMonth = '';
+  let schedulesByEmployee = [];
+  let schedulesByEmployeeLoading = false;
+  let schedulesByEmployeeError = '';
+
+  async function fetchSchedulesByEmployee() {
+    schedulesByEmployeeLoading = true;
+    schedulesByEmployeeError = '';
+    schedulesByEmployee = [];
+    try {
+      const url = `${API_BASE}/Admin/schedules/employee/${scheduleEmployeeId}/${scheduleEmployeeYear}/${scheduleEmployeeMonth}`;
+      const response = await authFetch(url, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error('Hiba a beosztások lekérdezésekor');
+      schedulesByEmployee = await response.json();
+    } catch (err) {
+      schedulesByEmployeeError = err.message;
+    }
+    schedulesByEmployeeLoading = false;
+  }
+
+  // Új beosztás létrehozása változók
+  let newScheduleEmployeeId = '';
+  let newScheduleDate = '';
+  let newScheduleStart = '';
+  let newScheduleEnd = '';
+  let newScheduleType = 'Shift';
+  let newScheduleLoading = false;
+  let newScheduleError = '';
+  let newScheduleSuccess = '';
+
+  const scheduleTypeOptions = [
+    { value: 'Shift', label: 'Műszak' },
+    { value: 'Overtime', label: 'Túlóra' },
+    { value: 'DayOff', label: 'Pihenőnap' },
+    { value: 'PaidTimeOff', label: 'Szabadság' },
+    { value: 'SickLeave', label: 'Betegség' }
+  ];
+
+  async function createSchedule() {
+    newScheduleLoading = true;
+    newScheduleError = '';
+    newScheduleSuccess = '';
+    if (!newScheduleEmployeeId || !newScheduleDate || !newScheduleType) {
+      newScheduleError = 'Az azonosító, dátum és típus megadása kötelező!';
+      newScheduleLoading = false;
+      return;
+    }
+    try {
+      const body = JSON.stringify({
+        scheduleId: 0,
+        employeeId: Number(newScheduleEmployeeId),
+        fullName: '', // Backend can fill in
+        scheduledDate: newScheduleDate,
+        startTime: newScheduleStart ? newScheduleStart : '00:00',
+        endTime: newScheduleEnd ? newScheduleEnd : '00:00',
+        type: newScheduleType,
+        scheduledHours: newScheduleStart && newScheduleEnd ? 0 : 0,
+        scheduledMonthlyHours: 0,
+        scheduledWorkDays: 0
+      });
+      const url = `${API_BASE}/Admin/schedules?employeeId=${encodeURIComponent(newScheduleEmployeeId)}`;
+      const response = await authFetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body
+      });
+      if (!response.ok) throw new Error('Hiba a beosztás mentésekor');
+      newScheduleSuccess = 'Beosztás sikeresen létrehozva!';
+      newScheduleEmployeeId = '';
+      newScheduleDate = '';
+      newScheduleStart = '';
+      newScheduleEnd = '';
+      newScheduleType = 'Shift';
+    } catch (err) {
+      newScheduleError = err.message;
+    } finally {
+      newScheduleLoading = false;
+    }
+  }
+
   // Havi riport összes dolgozóra
   let monthlyYear = '';
   let monthlyMonth = '';
@@ -738,6 +806,131 @@
   function formatNumber2(val) {
     if (val === null || val === undefined || isNaN(val)) return '';
     return Number(val).toFixed(2).replace(/\.00$/, '');
+  }
+
+  // --- Beosztás szerkesztése (PUT) változók ---
+  let updateEmployeeId = '';
+  let updateYear = '';
+  let updateMonth = '';
+  let updateDay = '';
+  let updateStartTime = '';
+  let updateEndTime = '';
+  let updateType = 'Shift';
+  let updateScheduleLoading = false;
+  let updateScheduleError = '';
+  let updateScheduleSuccess = '';
+
+  async function updateSchedule() {
+    updateScheduleLoading = true;
+    updateScheduleError = '';
+    updateScheduleSuccess = '';
+    if (!updateEmployeeId || !updateYear || !updateMonth || !updateDay || !updateType) {
+      updateScheduleError = 'Az azonosító, év, hónap, nap és típus megadása kötelező!';
+      updateScheduleLoading = false;
+      return;
+    }
+    try {
+      const url = `${API_BASE}/Admin/schedules/employee/${updateEmployeeId}/${updateYear}/${updateMonth}/${updateDay}`;
+      const body = JSON.stringify({
+        scheduleId: 0,
+        employeeId: Number(updateEmployeeId),
+        fullName: '', // Backend can fill in
+        scheduledDate: `${updateYear}-${String(updateMonth).padStart(2, '0')}-${String(updateDay).padStart(2, '0')}`,
+        startTime: updateStartTime ? updateStartTime : '00:00',
+        endTime: updateEndTime ? updateEndTime : '00:00',
+        type: updateType,
+        scheduledHours: 0,
+        scheduledMonthlyHours: 0,
+        scheduledWorkDays: 0
+      });
+      const response = await authFetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body
+      });
+      if (!response.ok) throw new Error('Hiba a beosztás módosításakor');
+      updateScheduleSuccess = 'Beosztás sikeresen módosítva!';
+      // Optionally clear fields
+    } catch (err) {
+      updateScheduleError = err.message;
+    } finally {
+      updateScheduleLoading = false;
+    }
+  }
+
+  // --- Beosztás törlése (DELETE) változók ---
+  let deleteEmployeeIdVar = '';
+  let deleteYearVar = '';
+  let deleteMonthVar = '';
+  let deleteDayVar = '';
+  let deleteScheduleLoading = false;
+  let deleteScheduleError = '';
+  let deleteScheduleSuccess = '';
+
+  async function deleteSchedule() {
+    deleteScheduleLoading = true;
+    deleteScheduleError = '';
+    deleteScheduleSuccess = '';
+    if (!deleteEmployeeIdVar || !deleteYearVar || !deleteMonthVar || !deleteDayVar) {
+      deleteScheduleError = 'Az azonosító, év, hónap, nap megadása kötelező!';
+      deleteScheduleLoading = false;
+      return;
+    }
+    try {
+      const url = `${API_BASE}/Admin/schedules/employee/${deleteEmployeeIdVar}/${deleteYearVar}/${deleteMonthVar}/${deleteDayVar}`;
+      const response = await authFetch(url, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok && response.status !== 204) throw new Error('Hiba a beosztás törlésekor');
+      deleteScheduleSuccess = 'Beosztás sikeresen törölve!';
+    } catch (err) {
+      deleteScheduleError = err.message;
+    } finally {
+      deleteScheduleLoading = false;
+    }
+  }
+
+  // --- Beosztás törlés megerősítő modal ---
+  let showDeleteScheduleConfirm = false;
+  let pendingDeleteVars = { employeeId: '', year: '', month: '', day: '' };
+
+  function openDeleteScheduleConfirm() {
+    pendingDeleteVars.employeeId = deleteEmployeeIdVar;
+    pendingDeleteVars.year = deleteYearVar;
+    pendingDeleteVars.month = deleteMonthVar;
+    pendingDeleteVars.day = deleteDayVar;
+    showDeleteScheduleConfirm = true;
+  }
+  function cancelDeleteSchedule() {
+    showDeleteScheduleConfirm = false;
+  }
+  async function confirmDeleteSchedule() {
+    deleteEmployeeIdVar = pendingDeleteVars.employeeId;
+    deleteYearVar = pendingDeleteVars.year;
+    deleteMonthVar = pendingDeleteVars.month;
+    deleteDayVar = pendingDeleteVars.day;
+    showDeleteScheduleConfirm = false;
+    await deleteSchedule();
+  }
+
+  // --- Checkpoint törlés megerősítő modal JAVÍTÁS ---
+  let showDeleteCheckpointConfirm = false;
+  let pendingDeleteCheckpointVars = { employeeId: '', checkpointId: '' };
+
+  function openDeleteCheckpointConfirm() {
+    pendingDeleteCheckpointVars.employeeId = deleteCheckpointEmployeeIdVar;
+    pendingDeleteCheckpointVars.checkpointId = deleteCheckpointIdVar;
+    showDeleteCheckpointConfirm = true;
+  }
+  function cancelDeleteCheckpoint() {
+    showDeleteCheckpointConfirm = false;
+  }
+  async function confirmDeleteCheckpoint() {
+    deleteCheckpointEmployeeIdVar = pendingDeleteCheckpointVars.employeeId;
+    deleteCheckpointIdVar = pendingDeleteCheckpointVars.checkpointId;
+    showDeleteCheckpointConfirm = false;
+    await deleteCheckpoint();
   }
 </script>
 
@@ -953,19 +1146,33 @@
     </div>
     <div class="api-row api-row-column">
       <div class="api-description">Checkpoint törlése (employeeId + checkpointId):</div>
-      <form class="api-action-form checkpoint-form-row" on:submit|preventDefault={deleteCheckpoint}>
+      <form class="api-action-form checkpoint-form-row" on:submit|preventDefault={openDeleteCheckpointConfirm}>
         <div class="form-inline-group-col">
           <label for="delete-employee-id">Dolgozó azonosító:</label>
-          <input type="number" id="delete-employee-id" min="100" max="999" bind:value={deleteCheckpointEmployeeId} placeholder="Pl. 123" required class="checkpoint-input" />
+          <input type="number" id="delete-employee-id" min="100" max="999" bind:value={deleteCheckpointEmployeeIdVar} placeholder="Pl. 123" required class="checkpoint-input" />
         </div>
         <div class="form-inline-group-col">
           <label for="delete-checkpoint-id">Checkpoint ID:</label>
-          <input type="number" id="delete-checkpoint-id" min="1" bind:value={deleteCheckpointId} placeholder="Pl. 12" required class="checkpoint-input" />
+          <input type="number" id="delete-checkpoint-id" min="1" bind:value={deleteCheckpointIdVar} placeholder="Pl. 10" required class="checkpoint-input" />
         </div>
         <div class="form-btn-col">
           <button type="submit" class="danger-action" disabled={deletingCheckpoint}>Törlés</button>
         </div>
       </form>
+      {#if showDeleteCheckpointConfirm}
+        <div class="delete-confirm-modal">
+          <div class="delete-confirm-message">
+            Biztosan törölni szeretnéd ezt a checkpointot?
+            <br>
+            <b>Dolgozó azonosító:</b> {pendingDeleteCheckpointVars.employeeId},
+            <b>Checkpoint azonosító:</b> {pendingDeleteCheckpointVars.checkpointId}
+          </div>
+          <div class="delete-confirm-buttons">
+            <button class="danger-action" on:click={confirmDeleteCheckpoint} disabled={deletingCheckpoint}>Törlés</button>
+            <button class="secondary-action" on:click={cancelDeleteCheckpoint} disabled={deletingCheckpoint}>Mégsem</button>
+          </div>
+        </div>
+      {/if}
       {#if deletingCheckpoint}
         <div>Checkpoint törlése folyamatban...</div>
       {:else if deleteCheckpointError}
@@ -1098,15 +1305,15 @@
                 <tbody>
                   <tr>
                     <td>Havi munkanapok</td>
-                    <td>{monthlyEmployeeReportData[0].monthlyWorkDays}</td>
+                    <td>{monthlyEmployeeReportData[0]?.monthlyWorkDays ?? '-'}</td>
                   </tr>
                   <tr>
-                    <td>Havi munkaórák</td>
-                    <td>{formatNumber2(monthlyEmployeeReportData[0].monthlyWorkHours)}</td>
+                    <td>Tervezett munkanapok</td>
+                    <td>{monthlyEmployeeReportData[0]?.scheduledWorkDays ?? '-'}</td>
                   </tr>
                   <tr>
-                    <td>Havi túlórák</td>
-                    <td>{formatNumber2(monthlyEmployeeReportData[0].monthlyOvertimeHours)}</td>
+                    <td>Havi túlóra</td>
+                    <td>{formatNumber2(monthlyEmployeeReportData[0]?.monthlyOvertimeHours ?? 0)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -1392,6 +1599,163 @@
         </table>
       </div>
       {/if}
+    </div>
+    <div class="api-row api-row-column">
+      <div class="api-description">Beosztás lekérdezése dolgozó, év és hónap szerint</div>
+      <form class="api-action-form form-inline-group" on:submit|preventDefault={fetchSchedulesByEmployee}>
+        <label for="schedule-employee-id">Dolgozó azonosító:</label>
+        <input id="schedule-employee-id" type="number" bind:value={scheduleEmployeeId} min="1" required class="checkpoint-input" placeholder="Pl. 100" />
+        <label for="schedule-employee-year">Év:</label>
+        <input id="schedule-employee-year" type="number" bind:value={scheduleEmployeeYear} min="2020" max="2070" required class="checkpoint-input" placeholder="Pl. 2025" />
+        <label for="schedule-employee-month">Hónap:</label>
+        <input id="schedule-employee-month" type="number" bind:value={scheduleEmployeeMonth} min="1" max="12" required class="checkpoint-input" placeholder="1-12" />
+        <div class="form-btn-col">
+          <button type="submit" class="primary-action">Lekérés</button>
+        </div>
+      </form>
+      {#if schedulesByEmployeeLoading}
+        <div>Betöltés...</div>
+      {:else if schedulesByEmployeeError}
+        <div class="error">{schedulesByEmployeeError}</div>
+      {:else if schedulesByEmployee && schedulesByEmployee.length > 0}
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Dolgozó azonosító</th>
+                <th>Dolgozó neve</th>
+                <th>Beosztás dátuma</th>
+                <th>Kezdési időpont</th>
+                <th>Befejezési időpont</th>
+                <th>Típus</th>
+                <th>Tervezett munkaórák</th>
+                <th>Tervezett havi munkaórák</th>
+                <th>Tervezett havi munkanapok</th>
+              </tr>
+            </thead>
+          <tbody>
+            {#each schedulesByEmployee as row}
+              <tr>
+                <td>{row.employeeId}</td>
+                <td>{row.fullName}</td>
+                <td>{row.scheduledDate}</td>
+                <td>{row.startTime}</td>
+                <td>{row.endTime}</td>
+                <td>{row.type}</td>
+                <td>{formatNumber2(row.scheduledHours)}</td>
+                <td>{formatNumber2(row.scheduledMonthlyHours)}</td>
+                <td>{row.scheduledWorkDays}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+      {/if}
+    </div>
+    <div class="api-row api-row-column">
+      <div class="api-description">Új beosztás létrehozása</div>
+      <form class="api-action-form form-inline-group" on:submit|preventDefault={createSchedule}>
+        <label for="new-schedule-employee-id">Dolgozó azonosító:</label>
+        <input id="new-schedule-employee-id" type="number" bind:value={newScheduleEmployeeId} min="1" required class="checkpoint-input" placeholder="Pl. 100" />
+        <label for="new-schedule-date">Tervezett dátum:</label>
+        <input id="new-schedule-date" type="date" bind:value={newScheduleDate} required class="checkpoint-input" />
+        <label for="new-schedule-start">Kezdési időpont:</label>
+        <input id="new-schedule-start" type="time" bind:value={newScheduleStart} class="checkpoint-input" />
+        <label for="new-schedule-end">Befejezési időpont:</label>
+        <input id="new-schedule-end" type="time" bind:value={newScheduleEnd} class="checkpoint-input" />
+        <label for="new-schedule-type">Típus:</label>
+        <select id="new-schedule-type" bind:value={newScheduleType} class="checkpoint-input">
+          {#each scheduleTypeOptions as opt}
+            <option value={opt.value}>{opt.label}</option>
+          {/each}
+        </select>
+        <div class="form-btn-col">
+          <button type="submit" class="primary-action" disabled={newScheduleLoading}>Létrehozás</button>
+        </div>
+      </form>
+      <div style="margin-top:0.4em;">
+        {#if newScheduleLoading}
+          <span>Mentés...</span>
+        {:else if newScheduleError}
+          <span class="error">{newScheduleError}</span>
+        {:else if newScheduleSuccess}
+          <span style="color: #0dc37b;">{newScheduleSuccess}</span>
+        {/if}
+      </div>
+    </div>
+    <div class="api-row api-row-column">
+      <div class="api-description">Beosztás szerkesztése (módosítás)</div>
+      <form class="api-action-form form-inline-group" on:submit|preventDefault={updateSchedule}>
+        <label for="update-employee-id">Dolgozó azonosító:</label>
+        <input id="update-employee-id" type="number" bind:value={updateEmployeeId} min="1" required class="checkpoint-input" placeholder="Pl. 100" />
+        <label for="update-year">Év:</label>
+        <input id="update-year" type="number" bind:value={updateYear} min="2020" max="2070" required class="checkpoint-input" placeholder="Pl. 2025" />
+        <label for="update-month">Hónap:</label>
+        <input id="update-month" type="number" bind:value={updateMonth} min="1" max="12" required class="checkpoint-input" placeholder="1-12" />
+        <label for="update-day">Nap:</label>
+        <input id="update-day" type="number" bind:value={updateDay} min="1" max="31" required class="checkpoint-input" placeholder="1-31" />
+        <label for="update-start-time">Kezdési időpont:</label>
+        <input id="update-start-time" type="time" bind:value={updateStartTime} class="checkpoint-input" />
+        <label for="update-end-time">Befejezési időpont:</label>
+        <input id="update-end-time" type="time" bind:value={updateEndTime} class="checkpoint-input" />
+        <label for="update-type">Típus:</label>
+        <select id="update-type" bind:value={updateType} class="checkpoint-input">
+          {#each scheduleTypeOptions as opt}
+            <option value={opt.value}>{opt.label}</option>
+          {/each}
+        </select>
+        <div class="form-btn-col">
+          <button type="submit" class="primary-action" disabled={updateScheduleLoading}>Módosítás</button>
+        </div>
+      </form>
+      <div style="margin-top:0.4em;">
+        {#if updateScheduleLoading}
+          <span>Mentés...</span>
+        {:else if updateScheduleError}
+          <span class="error">{updateScheduleError}</span>
+        {:else if updateScheduleSuccess}
+          <span style="color: #0dc37b;">{updateScheduleSuccess}</span>
+        {/if}
+      </div>
+    </div>
+    <div class="api-row api-row-column">
+      <div class="api-description">Beosztás törlése</div>
+      <form class="api-action-form form-inline-group" on:submit|preventDefault={openDeleteScheduleConfirm}>
+        <label for="delete-employee-id">Dolgozó azonosító:</label>
+        <input id="delete-employee-id" type="number" bind:value={deleteEmployeeIdVar} min="1" required class="checkpoint-input" placeholder="Pl. 100" />
+        <label for="delete-year">Év:</label>
+        <input id="delete-year" type="number" bind:value={deleteYearVar} min="2020" max="2070" required class="checkpoint-input" placeholder="Pl. 2025" />
+        <label for="delete-month">Hónap:</label>
+        <input id="delete-month" type="number" bind:value={deleteMonthVar} min="1" max="12" required class="checkpoint-input" placeholder="1-12" />
+        <label for="delete-day">Nap:</label>
+        <input id="delete-day" type="number" bind:value={deleteDayVar} min="1" max="31" required class="checkpoint-input" placeholder="1-31" />
+        <div class="form-btn-col">
+          <button type="submit" class="primary-action" disabled={deleteScheduleLoading}>Törlés</button>
+        </div>
+      </form>
+      {#if showDeleteScheduleConfirm}
+        <div class="delete-confirm-modal">
+          <div class="delete-confirm-message">
+            Biztosan törölni szeretnéd ezt a beosztást?
+            <br>
+            <b>Dolgozó azonosító:</b> {pendingDeleteVars.employeeId},
+            <b>Dátum:</b> {pendingDeleteVars.year}-{pendingDeleteVars.month}-{pendingDeleteVars.day}
+          </div>
+          <div class="delete-confirm-buttons">
+            <button class="danger-action" on:click={confirmDeleteSchedule} disabled={deleteScheduleLoading}>Törlés</button>
+            <button class="secondary-action" on:click={cancelDeleteSchedule} disabled={deleteScheduleLoading}>Mégsem</button>
+          </div>
+        </div>
+      {/if}
+      <div style="margin-top:0.4em;">
+        {#if deleteScheduleLoading}
+          <span>Törlés...</span>
+        {:else if deleteScheduleError}
+          <span class="error">{deleteScheduleError}</span>
+        {:else if deleteScheduleSuccess}
+          <span style="color: #0dc37b;">{deleteScheduleSuccess}</span>
+        {/if}
+      </div>
     </div>
   {/if}
  
