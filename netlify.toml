@@ -5,8 +5,3 @@ command = "npm run build"
   from = "/_app/*"
   to = "/_app/:splat"
   status = 200
-
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/sveltekit-render"
-  status = 200
