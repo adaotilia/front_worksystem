@@ -171,12 +171,112 @@
     changePasswordLoading = false;
   }
 
+  // --- Saját kimutatás lekérdezése hónap szerint ---
+  let worklogMonthYear = '';
+  let worklogMonthMonth = '';
+  let worklogsByMonth = null;
+  let worklogsByMonthLoading = false;
+  let worklogsByMonthError = '';
+
+  async function fetchWorklogsByMonth() {
+    worklogsByMonthLoading = true;
+    worklogsByMonthError = '';
+    worklogsByMonth = null;
+    try {
+      const url = `${API_BASE}/Employee/worklogs/${worklogMonthYear}/${worklogMonthMonth}`;
+      const response = await authFetch(url);
+      if (!response.ok) throw new Error('Hiba a kimutatás lekérdezésekor (havi)');
+      worklogsByMonth = await response.json();
+    } catch (err) {
+      worklogsByMonthError = err.message;
+    }
+    worklogsByMonthLoading = false;
+  }
+
+  // --- Saját kimutatás lekérdezése nap szerint ---
+  let worklogDayYear = '';
+  let worklogDayMonth = '';
+  let worklogDayDay = '';
+  let worklogsByDate = null;
+  let worklogsByDateLoading = false;
+  let worklogsByDateError = '';
+
+  async function fetchWorklogsByDate() {
+    worklogsByDateLoading = true;
+    worklogsByDateError = '';
+    worklogsByDate = null;
+    try {
+      const url = `${API_BASE}/Employee/worklogs/date/${worklogDayYear}/${worklogDayMonth}/${worklogDayDay}`;
+      const response = await authFetch(url);
+      if (!response.ok) throw new Error('Hiba a kimutatás lekérdezésekor (dátum)');
+      worklogsByDate = await response.json();
+    } catch (err) {
+      worklogsByDateError = err.message;
+    }
+    worklogsByDateLoading = false;
+  }
+
+  // --- Saját beosztás lekérdezése hónap szerint ---
+  let scheduleYear = '';
+  let scheduleMonth = '';
+  let schedules = [];
+  let schedulesLoading = false;
+  let schedulesError = '';
+  let hasTriedScheduleFetch = false;
+
+  async function fetchSchedulesByMonth() {
+    hasTriedScheduleFetch = true;
+    schedulesLoading = true;
+    schedulesError = '';
+    schedules = [];
+    try {
+      const url = `${API_BASE}/Employee/schedules/${scheduleYear}/${scheduleMonth}`;
+      const response = await authFetch(url);
+      if (!response.ok) throw new Error('Hiba a beosztások lekérdezésekor');
+      schedules = await response.json();
+    } catch (err) {
+      schedulesError = err.message;
+    }
+    schedulesLoading = false;
+  }
+
+  // --- Saját beosztás lekérdezése nap szerint ---
+  let scheduleDayYear = '';
+  let scheduleDayMonth = '';
+  let scheduleDayDay = '';
+  let schedulesByDay = [];
+  let schedulesByDayLoading = false;
+  let schedulesByDayError = '';
+  let hasTriedScheduleByDayFetch = false;
+
+  async function fetchSchedulesByDay() {
+    // Másold át a napi input értékeit a közös változókba
+    scheduleYear = scheduleDayYear;
+    scheduleMonth = scheduleDayMonth;
+    scheduleDay = scheduleDayDay;
+
+    hasTriedScheduleByDayFetch = true;
+    schedulesByDayLoading = true;
+    schedulesByDayError = '';
+    schedulesByDay = [];
+    try {
+      const url = `${API_BASE}/Employee/schedules/date/${scheduleYear}/${scheduleMonth}/${scheduleDay}`;
+      const response = await authFetch(url);
+      if (!response.ok) throw new Error('Hiba a napi beosztások lekérdezésekor');
+      schedulesByDay = await response.json();
+    } catch (err) {
+      schedulesByDayError = err.message;
+    }
+    schedulesByDayLoading = false;
+  }
+
   // --- Havi munka lekérdezés saját részre ---
   let monthlyYear = '';
   let monthlyMonth = '';
   let monthlyReportData = null;
   let monthlyReportLoading = false;
   let monthlyReportError = '';
+  let summaryRow = null;
 
   async function fetchMyMonthlyReport() {
     monthlyReportLoading = true;
@@ -187,10 +287,42 @@
       const resp = await authFetch(url);
       if (!resp.ok) throw new Error('Riport lekérdezése sikertelen');
       monthlyReportData = await resp.json();
+      summaryRow = monthlyReportData.find(row => row.reportMonth === row.date);
     } catch (err) {
       monthlyReportError = err.message;
     }
     monthlyReportLoading = false;
+  }
+
+  function formatTimeString(datetimeString) {
+    if (!datetimeString) return '00:00:00';
+    const match = datetimeString.match(/\d{2}:\d{2}:\d{2}$/);
+    if (match) return match[0];
+    return '00:00:00';
+  }
+
+  function formatDateTime(dt) {
+    if (!dt) return '';
+    const match = dt.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})/);
+    if (match) return `${match[1]} ${match[2]}`;
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dt)) return dt;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dt)) return dt + ' 00:00:00';
+    if (/^\d{2}:\d{2}:\d{2}$/.test(dt)) return '';
+    return dt;
+  }
+
+  function statusToHungarian(status) {
+    if (!status) return '';
+    switch (status.toLowerCase()) {
+      case 'active': return 'Aktív';
+      case 'inactive': return 'Inaktív';
+      default: return status;
+    }
+  }
+
+  function formatNumber2(val) {
+    if (val === null || val === undefined || isNaN(val)) return '';
+    return Number(val).toFixed(2).replace(/\.00$/, '');
   }
 </script>
 
@@ -239,9 +371,9 @@
           {#each checkpoints as cp}
             <tr>
               <td>{cp.employeeId}</td>
-              <td>{cp.checkInTime}</td>
-              <td>{cp.checkOutTime}</td>
-              <td>{cp.sessionStatus}</td>
+              <td>{formatDateTime(cp.checkInTime)}</td>
+              <td>{formatDateTime(cp.checkOutTime)}</td>
+              <td>{statusToHungarian(cp.sessionStatus)}</td>
             </tr>
           {/each}
         </tbody>
@@ -253,13 +385,17 @@
 
   {#if activeTab === 'monthly'}
     <div class="api-row api-row-column">
-      <div class="api-description">Havi riport lekérdezése (saját):</div>
+      <div class="api-description">Havi munka lekérdezése (saját):</div>
       <form class="form-2row api-action-form" on:submit|preventDefault={fetchMyMonthlyReport}>
         <div class="form-2row-row">
-          <label for="monthly-year">Év:</label>
-          <input id="monthly-year" type="number" bind:value={monthlyYear} min="2020" max="2070" required placeholder="Pl. 2025" size="12" class="checkpoint-input" />
-          <label for="monthly-month">Hónap:</label>
-          <input id="monthly-month" type="number" bind:value={monthlyMonth} min="1" max="12" required placeholder="1-12" size="9" class="checkpoint-input" />
+          <div class="form-inline-group">
+            <label for="monthly-year">Év:</label>
+            <input id="monthly-year" type="number" bind:value={monthlyYear} min="2020" max="2070" required placeholder="Pl. 2025" size="12" class="checkpoint-input" />
+          </div>
+          <div class="form-inline-group">
+            <label for="monthly-month">Hónap:</label>
+            <input id="monthly-month" type="number" bind:value={monthlyMonth} min="1" max="12" required placeholder="1-12" size="9" class="checkpoint-input" />
+          </div>
           <button type="submit" class="primary-action">Lekérés</button>
         </div>
       </form>
@@ -268,76 +404,264 @@
       {:else if monthlyReportError}
         <div class="error">{monthlyReportError}</div>
       {:else if monthlyReportData}
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Hónap</th>
+              <th>Dátum</th>
+              <th>Belépési idő</th>
+              <th>Kilépési idő</th>
+              <th>Ledolgozott órák</th>
+              <th>Túlórák</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each monthlyReportData as row}
+              <tr>
+                <td>{row.reportMonth ? row.reportMonth.slice(0,7) : ''}</td>
+                <td>{row.date && row.date !== '0001-01-01' && row.date !== null && row.date !== '' ? row.date : ''}</td>
+                <td>{row.checkInTime ? row.checkInTime : '00:00:00'}</td>
+                <td>{row.checkOutTime ? row.checkOutTime : '00:00:00'}</td>
+                <td>{formatNumber2(row.workHours)}</td>
+                <td>{formatNumber2(row.overtimeHours)}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+        {#if monthlyReportData && monthlyReportData.length > 0}
+          <table class="summary-table summary-table-standalone">
+            <tbody>
+              <tr>
+                <td>Havi munkanapok</td>
+                <td>{summaryRow ? summaryRow.monthlyWorkDays : ''}</td>
+              </tr>
+              <tr>
+                <td>Havi munkaórák</td>
+                <td>{formatNumber2(summaryRow ? summaryRow.monthlyWorkHours : '')}</td>
+              </tr>
+              <tr>
+                <td>Havi túlórák</td>
+                <td>{formatNumber2(summaryRow ? summaryRow.monthlyOvertimeHours : '')}</td>
+              </tr>
+            </tbody>
+          </table>
+        {/if}
+      {/if}
+    </div>
+  {/if}
+
+  {#if activeTab === 'schedule'}
+    <div class="api-row api-row-column">
+      <div class="api-description">Saját havi beosztás lekérdezése</div>
+      <form class="api-action-form" on:submit|preventDefault={fetchSchedulesByMonth}>
+        <div class="form-inline-group">
+          <label for="schedule-year">Év:</label>
+          <input id="schedule-year" type="number" bind:value={scheduleYear} min="2020" max="2070" required placeholder="Pl. 2025" class="checkpoint-input" />
+        </div>
+        <div class="form-inline-group">
+          <label for="schedule-month">Hónap:</label>
+          <input id="schedule-month" type="number" bind:value={scheduleMonth} min="1" max="12" required placeholder="1-12" class="checkpoint-input" />
+        </div>
+        <div class="form-btn-col">
+          <button type="submit" class="primary-action">Lekérés</button>
+        </div>
+      </form>
+      {#if hasTriedScheduleFetch}
+        {#if schedulesLoading}
+          <div>Betöltés...</div>
+        {:else if schedulesError}
+          <div class="error">{schedulesError}</div>
+        {:else}
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Beosztás dátuma</th>
+                  <th>Kezdési időpont</th>
+                  <th>Befejezési időpont</th>
+                  <th>Típus</th>
+                  <th>Tervezett munkaórák</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#if schedules.length > 0}
+                  {#each schedules as row}
+                    <tr>
+                      <td>{row.scheduledDate || '-'}</td>
+                      <td>{formatTimeString(row.startTime)}</td>
+                      <td>{formatTimeString(row.endTime)}</td>
+                      <td>{row.type}</td>
+                      <td>{row.scheduledHours}</td>
+                    </tr>
+                  {/each}
+                {:else}
+                  <tr>
+                    <td colspan="5" class="empty-table-row">Nincs adat a megadott időszakra.</td>
+                  </tr>
+                {/if}
+              </tbody>
+            </table>
+            <div class="api-row summary-table-container">
+              <table class="summary-table fill-width">
+                <tbody>
+                  {#if schedules.length > 0}
+                    <tr>
+                      <td>Tervezett havi munkaórák</td>
+                      <td>{schedules[schedules.length-1].scheduledMonthlyHours}</td>
+                    </tr>
+                    <tr>
+                      <td>Tervezett havi munkanapok</td>
+                      <td>{schedules[schedules.length-1].scheduledWorkDays}</td>
+                    </tr>
+                  {:else}
+                    <tr>
+                      <td colspan="2" class="empty-table-row">Nincs összegző adat.</td>
+                    </tr>
+                  {/if}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {/if}
+      {/if}
+    </div>
+    <div class="api-row api-row-column">
+      <div class="api-description">Saját napi beosztás lekérdezése</div>
+      <form class="api-action-form" on:submit|preventDefault={fetchSchedulesByDay}>
+        <div class="form-inline-group">
+          <label for="schedule-year-day">Év:</label>
+          <input id="schedule-year-day" type="number" bind:value={scheduleDayYear} min="2020" max="2070" required placeholder="Pl. 2025" class="checkpoint-input" />
+        </div>
+        <div class="form-inline-group">
+          <label for="schedule-month-day">Hónap:</label>
+          <input id="schedule-month-day" type="number" bind:value={scheduleDayMonth} min="1" max="12" required placeholder="1-12" class="checkpoint-input" />
+        </div>
+        <div class="form-inline-group">
+          <label for="schedule-day">Nap:</label>
+          <input id="schedule-day" type="number" bind:value={scheduleDayDay} min="1" max="31" required placeholder="1-31" class="checkpoint-input" />
+        </div>
+        <div class="form-btn-col">
+          <button type="submit" class="primary-action">Lekérés</button>
+        </div>
+      </form>
+      {#if hasTriedScheduleByDayFetch}
+        {#if schedulesByDayLoading}
+          <div>Betöltés...</div>
+        {:else if schedulesByDayError}
+          <div class="error">{schedulesByDayError}</div>
+        {:else if schedulesByDay && schedulesByDay.length > 0}
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Beosztás dátuma</th>
+                  <th>Kezdési időpont</th>
+                  <th>Befejezési időpont</th>
+                  <th>Típus</th>
+                  <th>Tervezett munkaórák</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each schedulesByDay as row}
+                  <tr>
+                    <td>{row.scheduledDate || '-'}</td>
+                    <td>{formatTimeString(row.startTime)}</td>
+                    <td>{formatTimeString(row.endTime)}</td>
+                    <td>{row.type}</td>
+                    <td>{row.scheduledHours}</td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        {:else}
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Beosztás dátuma</th>
+                  <th>Kezdési időpont</th>
+                  <th>Befejezési időpont</th>
+                  <th>Típus</th>
+                  <th>Tervezett munkaórák</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="5" class="empty-table-row">Nincs adat a megadott napra.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        {/if}
+      {/if}
+    </div>
+  {/if}
+
+  {#if activeTab === 'report'}
+    <div class="api-row api-row-column">
+      <div class="api-description">Kimutatás lekérdezése hónap szerint:</div>
+      <form class="api-action-form form-inline" on:submit|preventDefault={fetchWorklogsByMonth}>
+        <div class="form-inline-group">
+          <label for="worklog-month-year">Év:</label>
+          <input id="worklog-month-year" type="number" bind:value={worklogMonthYear} min="2024" max="2070" required placeholder="Pl. 2025" class="checkpoint-input" />
+        </div>
+        <div class="form-inline-group">
+          <label for="worklog-month-month">Hónap:</label>
+          <input id="worklog-month-month" type="number" bind:value={worklogMonthMonth} min="1" max="12" required placeholder="1-12" class="checkpoint-input" />
+        </div>
+        <div class="form-btn-col">
+          <button type="submit" class="primary-action">Lekérés</button>
+        </div>
+      </form>
+      {#if worklogsByMonthLoading}
+        <div>Betöltés...</div>
+      {:else if worklogsByMonthError}
+        <div class="error">{worklogsByMonthError}</div>
+      {:else if worklogsByMonth}
         <div class="data-table-wrapper">
           <table class="data-table">
             <thead>
               <tr>
-                <th>Hónap</th>
-                <th>Dátum</th>
-                <th>Ledolgozott órák</th>
+                <th>Dolgozó azonosító</th>
+                <th>Dolgozó neve</th>
+                <th>Beosztás dátuma</th>
+                <th>Munkaórák</th>
                 <th>Túlórák</th>
-                <th>Havi munkanapok</th>
-                <th>Havi munkaórák</th>
-                <th>Havi túlórák</th>
+                <th>Tervezett munkaórák</th>
+                <th>Tervezett túlóra</th>
+                <th>Típus</th>
               </tr>
             </thead>
             <tbody>
-              {#if Array.isArray(monthlyReportData)}
-                {#each monthlyReportData as row}
-                  <tr>
-                    <td>{row.reportMonth?.slice(0,7) ?? ''}</td>
-                    <td>{row.date && row.date !== '0001-01-01' && row.date !== null && row.date !== '' ? row.date : ''}</td>
-                    <td>{row.workHours?.toFixed(2) ?? ''}</td>
-                    <td>{row.overtimeHours?.toFixed(2) ?? ''}</td>
-                    <td>{row.monthlyWorkDays ?? ''}</td>
-                    <td>{row.monthlyWorkHours?.toFixed(2) ?? ''}</td>
-                    <td>{row.monthlyOvertimeHours?.toFixed(2) ?? ''}</td>
-                  </tr>
-                {/each}
-              {:else}
+              {#each worklogsByMonth as row}
                 <tr>
-                  <td>{monthlyReportData.reportMonth?.slice(0,7) ?? ''}</td>
-                  <td>{monthlyReportData.date && monthlyReportData.date !== '0001-01-01' && monthlyReportData.date !== null && monthlyReportData.date !== '' ? monthlyReportData.date : ''}</td>
-                  <td>{monthlyReportData.workHours?.toFixed(2) ?? ''}</td>
-                  <td>{monthlyReportData.overtimeHours?.toFixed(2) ?? ''}</td>
-                  <td>{monthlyReportData.monthlyWorkDays ?? ''}</td>
-                  <td>{monthlyReportData.monthlyWorkHours?.toFixed(2) ?? ''}</td>
-                  <td>{monthlyReportData.monthlyOvertimeHours?.toFixed(2) ?? ''}</td>
+                  <td>{row.employeeId}</td>
+                  <td>{row.fullName}</td>
+                  <td>{row.scheduledDate}</td>
+                  <td>{row.workHours}</td>
+                  <td>{row.overtimeHours}</td>
+                  <td>{row.scheduledHours}</td>
+                  <td>{row.scheduledOvertime}</td>
+                  <td>{row.type}</td>
                 </tr>
-              {/if}
+              {/each}
             </tbody>
           </table>
-          {#if Array.isArray(monthlyReportData) && monthlyReportData.length > 0}
+          {#if worklogsByMonth.length > 0}
             <table class="summary-table summary-table-standalone">
               <tbody>
                 <tr>
                   <td>Havi munkanapok</td>
-                  <td>{monthlyReportData[0].monthlyWorkDays}</td>
+                  <td>{worklogsByMonth[0] ? worklogsByMonth[0].monthlyWorkDays : '-'}</td>
                 </tr>
                 <tr>
-                  <td>Havi munkaórák</td>
-                  <td>{monthlyReportData[0].monthlyWorkHours?.toFixed(2)}</td>
+                  <td>Tervezett munkanapok</td>
+                  <td>{worklogsByMonth[0] ? worklogsByMonth[0].scheduledWorkDays : '-'}</td>
                 </tr>
                 <tr>
-                  <td>Havi túlórák</td>
-                  <td>{monthlyReportData[0].monthlyOvertimeHours?.toFixed(2)}</td>
-                </tr>
-              </tbody>
-            </table>
-          {:else if monthlyReportData}
-            <table class="summary-table summary-table-standalone">
-              <tbody>
-                <tr>
-                  <td>Havi munkanapok</td>
-                  <td>{monthlyReportData.monthlyWorkDays}</td>
-                </tr>
-                <tr>
-                  <td>Havi munkaórák</td>
-                  <td>{monthlyReportData.monthlyWorkHours?.toFixed(2)}</td>
-                </tr>
-                <tr>
-                  <td>Havi túlórák</td>
-                  <td>{monthlyReportData.monthlyOvertimeHours?.toFixed(2)}</td>
+                  <td>Havi túlóra</td>
+                  <td>{worklogsByMonth[0] ? worklogsByMonth[0].monthlyOvertimeHours : '-'}</td>
                 </tr>
               </tbody>
             </table>
@@ -345,119 +669,61 @@
         </div>
       {/if}
     </div>
-  {/if}
-
-  {#if activeTab === 'schedule'}
     <div class="api-row api-row-column">
-      <div class="api-description">
-        Beosztás lekérdezése (dátum, dolgozó):
-      </div>
-      <form class="api-action-form">
+      <div class="api-description">Kimutatás lekérdezése konkrét napra:</div>
+      <form class="api-action-form form-inline" on:submit|preventDefault={fetchWorklogsByDate}>
         <div class="form-inline-group">
-          <label for="schedule-date">Dátum:</label>
-          <input type="date" id="schedule-date" name="scheduleDate" />
+          <label for="worklog-date-year">Év:</label>
+          <input id="worklog-date-year" type="number" bind:value={worklogDayYear} min="2024" max="2070" required placeholder="Pl. 2025" class="checkpoint-input" />
         </div>
         <div class="form-inline-group">
-          <label for="user-id-schedule">Dolgozó azonosító:</label>
-          <input type="text" id="user-id-schedule" name="userIdSchedule" placeholder="Pl. 123" />
+          <label for="worklog-date-month">Hónap:</label>
+          <input id="worklog-date-month" type="number" bind:value={worklogDayMonth} min="1" max="12" required placeholder="1-12" class="checkpoint-input" />
+        </div>
+        <div class="form-inline-group">
+          <label for="worklog-date-day">Nap:</label>
+          <input id="worklog-date-day" type="number" bind:value={worklogDayDay} min="1" max="31" required placeholder="1-31" class="checkpoint-input" />
+        </div>
+        <div class="form-btn-col">
+          <button type="submit" class="primary-action">Lekérés</button>
         </div>
       </form>
-    </div>
-    <div class="data-table-wrapper">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Dolgozó azonosító</th>
-            <th>Dátum</th>
-            <th>Kezdési időpont</th>
-            <th>Befejezési időpont</th>
-            <th>Típus</th>
-            <th>Tervezett munkaórák</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>123</td>
-            <td>2025-04-27</td>
-            <td>08:00</td>
-            <td>16:00</td>
-            <td>Nappali</td>
-            <td>8</td>
-          </tr>
-        </tbody>
-      </table>
-      <table class="summary-table">
-        <tbody>
-          <tr>
-            <td>Tervezett havi munkaórák</td>
-            <td>168</td>
-          </tr>
-          <tr>
-            <td>Tervezett havi munkanapok</td>
-            <td>21</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  {/if}
-
-  {#if activeTab === 'report'}
-    <div class="api-row api-row-column">
-      <div class="api-description">
-        Kimutatás lekérdezése (dátum, dolgozó):
-      </div>
-      <form class="api-action-form">
-        <div class="form-inline-group">
-          <label for="report-date">Dátum:</label>
-          <input type="date" id="report-date" name="reportDate" />
+      {#if worklogsByDateLoading}
+        <div>Betöltés...</div>
+      {:else if worklogsByDateError}
+        <div class="error">{worklogsByDateError}</div>
+      {:else if worklogsByDate}
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Dolgozó azonosító</th>
+                <th>Dolgozó neve</th>
+                <th>Beosztás dátuma</th>
+                <th>Munkaórák</th>
+                <th>Túlórák</th>
+                <th>Tervezett munkaórák</th>
+                <th>Tervezett túlóra</th>
+                <th>Típus</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each worklogsByDate as row}
+                <tr>
+                  <td>{row.employeeId}</td>
+                  <td>{row.fullName}</td>
+                  <td>{row.scheduledDate}</td>
+                  <td>{row.workHours}</td>
+                  <td>{row.overtimeHours}</td>
+                  <td>{row.scheduledHours}</td>
+                  <td>{row.scheduledOvertime}</td>
+                  <td>{row.type}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
         </div>
-        <div class="form-inline-group">
-          <label for="user-id-report">Dolgozó azonosító:</label>
-          <input type="text" id="user-id-report" name="userIdReport" placeholder="Pl. 123" />
-        </div>
-      </form>
-    </div>
-    <div class="data-table-wrapper">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Dolgozó azonosító</th>
-            <th>Dátum</th>
-            <th>Munkaóra</th>
-            <th>Túlóra</th>
-            <th>Tervezett munkaóra</th>
-            <th>Tervezett túlóra</th>
-            <th>Típus</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>123</td>
-            <td>2025-04-27</td>
-            <td>8</td>
-            <td>2</td>
-            <td>8</td>
-            <td>1</td>
-            <td>Nappali</td>
-          </tr>
-        </tbody>
-      </table>
-      <table class="summary-table">
-        <tbody>
-          <tr>
-            <td>Havi munkanapok</td>
-            <td>20</td>
-          </tr>
-          <tr>
-            <td>Tervezett havi munkanapok</td>
-            <td>21</td>
-          </tr>
-          <tr>
-            <td>Havi túlórák</td>
-            <td>12</td>
-          </tr>
-        </tbody>
-      </table>
+      {/if}
     </div>
   {/if}
 
@@ -465,14 +731,22 @@
     <div class="api-row api-row-column">
       <div class="api-description">Jelszó módosítása:</div>
       <form class="api-action-form form-inline-group-2row" on:submit|preventDefault={changeEmployeePassword}>
-        <label for="employee-id">Azonosító:</label>
-        <input id="employee-id" type="number" bind:value={employeeId} required placeholder="Pl. 123" min="1" size="6" class="checkpoint-input" style="max-width: 110px;" />
-        <label for="old-password">Régi jelszó:</label>
-        <input id="old-password" type="password" bind:value={oldPassword} required placeholder="Régi jelszó" autocomplete="current-password" class="checkpoint-input" style="max-width: 180px;" />
-        <label for="new-password">Új jelszó:</label>
-        <input id="new-password" type="password" bind:value={newPassword} required placeholder="Új jelszó" autocomplete="new-password" class="checkpoint-input" style="max-width: 180px;" />
-        <label for="confirm-new-password">Új jelszó megerősítése:</label>
-        <input id="confirm-new-password" type="password" bind:value={confirmNewPassword} required placeholder="Új jelszó újra" autocomplete="new-password" class="checkpoint-input" style="max-width: 180px;" />
+        <div class="form-inline-group">
+          <label for="employee-id">Azonosító:</label>
+          <input id="employee-id" type="number" bind:value={employeeId} required placeholder="Pl. 123" min="1" size="6" class="checkpoint-input" style="max-width: 110px;" />
+        </div>
+        <div class="form-inline-group">
+          <label for="old-password">Régi jelszó:</label>
+          <input id="old-password" type="password" bind:value={oldPassword} required placeholder="Régi jelszó" autocomplete="current-password" class="checkpoint-input" style="max-width: 180px;" />
+        </div>
+        <div class="form-inline-group">
+          <label for="new-password">Új jelszó:</label>
+          <input id="new-password" type="password" bind:value={newPassword} required placeholder="Új jelszó" autocomplete="new-password" class="checkpoint-input" style="max-width: 180px;" />
+        </div>
+        <div class="form-inline-group">
+          <label for="confirm-new-password">Új jelszó megerősítése:</label>
+          <input id="confirm-new-password" type="password" bind:value={confirmNewPassword} required placeholder="Új jelszó újra" autocomplete="new-password" class="checkpoint-input" style="max-width: 180px;" />
+        </div>
         <button type="submit" class="primary-action" disabled={changePasswordLoading}>Jelszó módosítása</button>
       </form>
       {#if changePasswordLoading}
@@ -576,20 +850,21 @@
   font-weight: bold;
   }
   .api-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 1.2rem;
-  margin-bottom: 1rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1.2rem;
+    margin-bottom: 1rem;
   }
   .api-row:last-child {
-  margin-bottom: 0;
+    margin-bottom: 0;
   }
   .api-row-column {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.3rem;
+    gap: 0.2rem;
+    margin-bottom: 1.2rem;
   }
   .api-action-form {
     display: flex;
@@ -625,28 +900,22 @@
     margin: 0;
     min-width: 0;
   }
-  .form-inline-group input[type="date"] {
-  margin: 0;
-  min-width: 180px;
-  color: var(--color-table-placeholder, #bdbfff);
-  background: inherit;
+  .checkpoint-input {
+    color: var(--color-table-placeholder, #bdbfff);
+    background: inherit;
+    border: 1px solid var(--color-table-placeholder, #bdbfff);
+    border-radius: 0.7rem;
+    padding: 0.5rem 1rem;
+    font-size: 1.05rem;
+    transition: border 0.15s;
   }
-  .form-inline-group input[type="date"]::placeholder {
+  .checkpoint-input::placeholder {
     color: var(--color-table-placeholder, #bdbfff);
     opacity: 1;
   }
-  .form-inline-group input[type="text"] {
-    min-width: 140px;
-    max-width: 220px;
-    width: 100%;
-    font-size: 1rem;
-    padding: 0.42rem 0.8rem;
-    border-radius: 0.42rem;
-    box-sizing: border-box;
-  }
-  .form-inline-group input[type="text"]::placeholder {
-    color: var(--color-table-placeholder, #bdbfff);
-    opacity: 1;
+  .checkpoint-input:focus {
+    border-color: var(--color-table-header-text, #6c3bb8);
+    outline: none;
   }
   .primary-action {
     background: var(--color-primary);
@@ -698,6 +967,10 @@
   .data-table tr:last-child td {
   border-bottom: none;
   }
+  .data-table td:first-child {
+    min-width: 120px;
+    font-weight: 600;
+  }
   .summary-table {
   margin-top: 1.7rem;
   width: 100%;
@@ -719,28 +992,12 @@
   font-weight: 600;
   color: var(--color-table-header-text, #6c3bb8);
   background: var(--color-table-header-bg, #f5f3ff);
-  width: 60%;
+  width: 38%;
+  min-width: 170px;
   }
   .summary-table td:last-child {
   text-align: right;
   font-weight: 500;
-  }
-  .checkpoint-input {
-    color: var(--color-table-placeholder, #bdbfff);
-    background: inherit;
-    border: 1px solid var(--color-table-placeholder, #bdbfff);
-    border-radius: 0.7rem;
-    padding: 0.5rem 1rem;
-    font-size: 1.05rem;
-    transition: border 0.15s;
-  }
-  .checkpoint-input::placeholder {
-    color: var(--color-table-placeholder, #bdbfff);
-    opacity: 1;
-  }
-  .checkpoint-input:focus {
-    border-color: var(--color-table-header-text, #6c3bb8);
-    outline: none;
   }
   .api-description {
     margin-top: 1.5rem;
@@ -831,5 +1088,34 @@
     padding-bottom: 0;
     margin-top: 0;
     margin-bottom: 0;
+  }
+  .api-action-form.form-inline {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+  }
+  .api-action-form.form-inline label {
+    margin-bottom: 0;
+  }
+  .form-btn-col {
+    display: flex;
+    align-items: flex-end;
+    align-self: flex-end;
+    margin-top: 0;
+  }
+  .api-action-form .primary-action {
+    align-self: flex-end;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  .primary-action.btn-align-bottom {
+    align-self: flex-end;
+    margin-top: 0;
+  }
+  .empty-table-row {
+    text-align: center;
+    color: var(--color-table-placeholder, #bdbfff);
+    font-style: italic;
   }
 </style>
