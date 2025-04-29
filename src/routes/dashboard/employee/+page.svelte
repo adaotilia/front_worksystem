@@ -8,7 +8,7 @@
   import { browser } from '$app/environment';
   import { API_BASE } from '../../../config.js';
   import { authFetch } from '../../../authFetch.js';
-  
+
   const dispatch = createEventDispatcher();
   let token = '';
   let userRole = '';
@@ -31,7 +31,6 @@
     { key: 'dashboard', label: 'Vezérlőpult' }
   ];
 
-  // Auth store szinkronizáció
   const unsubscribe = auth.subscribe((state) => {
     token = state.token;
     userRole = state.userRole;
@@ -40,7 +39,6 @@
   async function fetchEmployeeData() {
     if (!token || !EmployeeId) return;
     try {
-      // Az employee saját adatait az /Employee/employees/me végponton kérjük le
       const url = `${API_BASE}/Employee/employees/me`;
       const response = await fetch(url, {
         headers: {
@@ -51,7 +49,6 @@
       const text = await response.text();
       if (!response.ok) throw new Error('Hiba az employee adatok lekérésekor');
       employeeData = JSON.parse(text);
-      // Beállítjuk a sessionStatus-t 'online'-ra, ha sikerült az adatokat lekérni
       employeeData.sessionStatus = 'online';
     } catch (err) {
       console.error('Hiba az employee adatok lekérésekor:', err);
@@ -59,7 +56,6 @@
     }
   }
 
-  // Jogosultság ellenőrzés és adatlekérés csak böngészőben, onMount-ban!
   onMount(() => {
     if (!token || !userRole || userRole.toLowerCase() !== 'employee') {
       if (!token || !userRole) {
@@ -81,7 +77,6 @@
     goto('/');
   }
 
-  // --- Havi checkpoint lekérés saját azonosítóra ---
   let selectedYear = '';
   let selectedMonth = '';
   let checkpoints = [];
@@ -171,7 +166,6 @@
     changePasswordLoading = false;
   }
 
-  // --- Saját kimutatás lekérdezése hónap szerint ---
   let worklogMonthYear = '';
   let worklogMonthMonth = '';
   let worklogsByMonth = null;
@@ -193,7 +187,6 @@
     worklogsByMonthLoading = false;
   }
 
-  // --- Saját kimutatás lekérdezése nap szerint ---
   let worklogDayYear = '';
   let worklogDayMonth = '';
   let worklogDayDay = '';
@@ -216,7 +209,6 @@
     worklogsByDateLoading = false;
   }
 
-  // --- Saját beosztás lekérdezése hónap szerint ---
   let scheduleYear = '';
   let scheduleMonth = '';
   let schedules = [];
@@ -240,7 +232,6 @@
     schedulesLoading = false;
   }
 
-  // --- Saját beosztás lekérdezése nap szerint ---
   let scheduleDayYear = '';
   let scheduleDayMonth = '';
   let scheduleDayDay = '';
@@ -250,7 +241,6 @@
   let hasTriedScheduleByDayFetch = false;
 
   async function fetchSchedulesByDay() {
-    // Másold át a napi input értékeit a közös változókba
     scheduleYear = scheduleDayYear;
     scheduleMonth = scheduleDayMonth;
     scheduleDay = scheduleDayDay;
@@ -270,7 +260,6 @@
     schedulesByDayLoading = false;
   }
 
-  // --- Havi munka lekérdezés saját részre ---
   let monthlyYear = '';
   let monthlyMonth = '';
   let monthlyReportData = null;

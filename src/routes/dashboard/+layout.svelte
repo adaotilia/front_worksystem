@@ -1,7 +1,6 @@
 <script>
   import { theme } from '../../themeStore.js';
   import ProfileCard from '../../components/ProfileCard.svelte';
-  import StatCard from '../../components/StatCard.svelte';
   import { goto } from '$app/navigation';
   import { auth } from '../../stores/authStore.js';
   import { onMount } from 'svelte';
@@ -65,7 +64,7 @@
       <div class="error">{error}</div>
     {/if}
     <div class="dashboard-header-center">
-      <StatCard label={stat.label || 'Ledolgozott munkanapok'} value={stat.value || ''} />
+      <!-- StatCard removed -->
     </div>
     <div class="dashboard-header-actions">
       <button class="main-btn logout-btn" on:click={logoutFn}>Kijelentkezés</button>

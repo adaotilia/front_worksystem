@@ -15,13 +15,11 @@
   let adminData = null;
   let error = '';
 
-  // Auth store szinkronizáció
   const unsubscribe = auth.subscribe((state) => {
     token = state.token;
     userRole = state.userRole;
   });
 
-  // Új változók a checkpoint lekérdezéshez
   let selectedYear = '';
   let selectedMonth = '';
   let checkpoints = [];
@@ -29,7 +27,6 @@
   let checkpointsError = '';
   let hasTriedMonthFetch = false;
 
-  // Új változók az employee ID szerinti lekérdezéshez
   let employeeIdInput = '';
   let employeeYearInput = '';
   let employeeMonthInput = '';
@@ -38,14 +35,12 @@
   let checkpointsByEmployeeError = '';
   let hasTriedEmployeeFetch = false;
 
-  // Új változók a státusz lekérdezéshez
   let statusEmployeeId = '';
   let statusDate = '';
   let statusResult = null;
   let statusLoading = false;
   let statusError = '';
 
-  // Új változók a checkpoint lekéréshez
   let checkTimesIdInput = '';
   let checkTimesYearInput = '';
   let checkTimesMonthInput = '';
@@ -54,7 +49,6 @@
   let checkTimesError = '';
   let hasTriedCheckTimes = false;
 
-  // Új változók az új checkpoint létrehozásához
   let newCheckpointId = '';
   let newCheckpointStart = '';
   let newCheckpointEnd = '';
@@ -62,7 +56,6 @@
   let checkpointCreateMessage = '';
   let checkpointCreateError = '';
 
-  // Új változók a checkpoint módosításához
   let updateCheckpointEmployeeId = '';
   let updateCheckpointId = '';
   let updateCheckpointCheckIn = '';
@@ -71,7 +64,6 @@
   let updateCheckpointMessage = '';
   let updateCheckpointError = '';
 
-  // Új változók a checkpoint törléséhez
   let deleteCheckpointEmployeeIdVar = '';
   let deleteCheckpointIdVar = '';
   let deletingCheckpoint = false;
@@ -92,12 +84,10 @@
     { key: 'dashboard', label: 'Vezérlőpult' }
   ];
 
-  // Közös változó a megjelenítendő checkpointokhoz
   let displayedCheckpoints = [];
   let displayedLoading = false;
   let displayedError = '';
 
-  // Új checkpoint létrehozása változók
   let createCheckpointEmployeeId = '';
   let createCheckpointCheckInDate = '';
   let createCheckpointCheckInTime = '';
@@ -107,32 +97,27 @@
   let createCheckpointError = '';
   let createCheckpointResult = null;
 
-  // Dolgozók lekérdezése admin vezérlőpult alá
   let employees = [];
   let employeesLoading = false;
   let employeesError = '';
   let showEmployees = false;
 
-  // Egy dolgozó lekérdezése azonosító alapján
   let singleEmployee = null;
   let singleEmployeeLoading = false;
   let singleEmployeeError = '';
   let singleEmployeeIdInput = '';
   let showSingleEmployee = false;
 
-  // Új: dolgozók lekérése jogkör szerint
   let selectedRole = 'Employee';
   let employeesByRole = [];
   let employeesByRoleLoading = false;
   let employeesByRoleError = '';
 
-  // Új: dolgozó lekérése felhasználónév alapján
   let usernameInput = '';
   let userByUsername = null;
   let userByUsernameLoading = false;
   let userByUsernameError = '';
 
-  // Új dolgozó hozzáadása változók
   let newFullName = '';
   let newUsername = '';
   let newPassword = '';
@@ -141,7 +126,6 @@
   let addEmployeeError = '';
   let addEmployeeSuccess = '';
 
-  // Teljes név módosítása változók
   let updateFullnameId = '';
   let updateFullnameOld = '';
   let updateFullnameNew = '';
@@ -149,7 +133,6 @@
   let updateFullnameError = '';
   let updateFullnameSuccess = '';
 
-  // Felhasználónév módosítása változók
   let updateUsernameId = '';
   let updateUsernameOld = '';
   let updateUsernameNew = '';
@@ -157,7 +140,6 @@
   let updateUsernameError = '';
   let updateUsernameSuccess = '';
 
-  // Jelszó módosítása változók
   let updatePasswordId = '';
   let updatePasswordUsername = '';
   let updatePasswordNew = '';
@@ -165,14 +147,12 @@
   let updatePasswordError = '';
   let updatePasswordSuccess = '';
 
-  // Jogkör módosítása változók
   let updateRoleId = '';
   let updateRoleNew = 'Employee';
   let updateRoleLoading = false;
   let updateRoleError = '';
   let updateRoleSuccess = '';
 
-  // Dolgozó törlése változók
   let deleteEmployeeId = '';
   let deleteEmployeeLoading = false;
   let deleteEmployeeError = '';
@@ -264,7 +244,6 @@
       });
       if (!response.ok) throw new Error('Hiba a checkpointok lekérdezésekor');
       checkpoints = await response.json();
-      // Közös változó frissítése
       displayedCheckpoints = checkpoints;
       displayedLoading = false;
       displayedError = '';
@@ -291,7 +270,6 @@
       });
       if (!response.ok) throw new Error('Hiba a checkpointok lekérdezésekor');
       checkpointsByEmployee = await response.json();
-      // Közös változó frissítése
       displayedCheckpoints = checkpointsByEmployee;
       displayedLoading = false;
       displayedError = '';
@@ -379,7 +357,6 @@
     createCheckpointError = '';
     createCheckpointResult = null;
     try {
-      // Összeállítjuk az ISO stringeket
       const checkInDateTime = `${createCheckpointCheckInDate}T${createCheckpointCheckInTime}:00.000Z`;
       const checkOutDateTime = `${createCheckpointCheckOutDate}T${createCheckpointCheckOutTime}:00.000Z`;
       const url = `${API_BASE}/Admin/checkpoints`;
@@ -423,13 +400,11 @@
     updateCheckpointError = '';
     updateCheckpointMessage = '';
     try {
-      // Ellenőrzés: minden mező ki van-e töltve
       if (!updateCheckpointEmployeeId || !updateCheckpointId || !updateCheckpointCheckIn || !updateCheckpointCheckOut) {
         updateCheckpointError = 'Minden mezőt ki kell tölteni!';
         updatingCheckpoint = false;
         return;
       }
-      // Ellenőrzés: belépési idő < kilépési idő
       if (updateCheckpointCheckIn >= updateCheckpointCheckOut) {
         updateCheckpointError = 'A belépési időnek korábbinak kell lennie, mint a kilépési idő!';
         updatingCheckpoint = false;
@@ -440,7 +415,7 @@
         employeeId: updateCheckpointEmployeeId,
         checkInTime: updateCheckpointCheckIn,
         checkOutTime: updateCheckpointCheckOut,
-        sessionStatus: 'Inactive' // vagy 'Active', ha az a kívánt default
+        sessionStatus: 'Inactive' 
       };
       const url = `${API_BASE}/Admin/checkpoints/${updateCheckpointEmployeeId}/${updateCheckpointId}`;
       const body = JSON.stringify(checkpointDto);
@@ -491,7 +466,6 @@
       });
       if (!response.ok && response.status !== 204) throw new Error('Hiba a checkpoint törlésekor');
       deleteCheckpointMessage = 'Checkpoint sikeresen törölve!';
-      // Mezők ürítése
       deleteCheckpointEmployeeIdVar = '';
       deleteCheckpointIdVar = '';
     } catch (err) {
@@ -505,7 +479,6 @@
     goto('/');
   }
 
-  // Új kimutatás (worklogs) GET metódusok
   let worklogsByMonth = null;
   let worklogsByMonthLoading = false;
   let worklogsByMonthError = '';
@@ -569,7 +542,6 @@
     worklogsByDateLoading = false;
   }
 
-  // Új változók a három lekérdezés inputjához
   let worklogEmployeeId = '';
   let worklogEmployeeYear = '';
   let worklogEmployeeMonth = '';
@@ -577,7 +549,6 @@
   let worklogDateMonth = '';
   let worklogDateDay = '';
 
-  // Beosztás (Schedule) lekérdezés
   let scheduleYear = '';
   let scheduleMonth = '';
   let schedules = [];
@@ -625,7 +596,6 @@
     schedulesByDayLoading = false;
   }
 
-  // Új változók a dolgozó, év, hónap alapján történő beosztás lekérdezéshez
   let scheduleEmployeeId = '';
   let scheduleEmployeeYear = '';
   let scheduleEmployeeMonth = '';
@@ -650,7 +620,6 @@
     schedulesByEmployeeLoading = false;
   }
 
-  // Új beosztás létrehozása változók
   let newScheduleEmployeeId = '';
   let newScheduleDate = '';
   let newScheduleStart = '';
@@ -681,7 +650,7 @@
       const body = JSON.stringify({
         scheduleId: 0,
         employeeId: Number(newScheduleEmployeeId),
-        fullName: '', // Backend can fill in
+        fullName: '', 
         scheduledDate: newScheduleDate,
         startTime: newScheduleStart ? newScheduleStart : '00:00',
         endTime: newScheduleEnd ? newScheduleEnd : '00:00',
@@ -710,7 +679,6 @@
     }
   }
 
-  // Havi riport összes dolgozóra
   let monthlyYear = '';
   let monthlyMonth = '';
   let monthlyReportData = null;
@@ -732,7 +700,6 @@
     monthlyReportLoading = false;
   }
 
-  // Havi riport egy dolgozóra
   let monthlyEmployeeId = '';
   let monthlyEmployeeYear = '';
   let monthlyEmployeeMonth = '';
@@ -755,7 +722,6 @@
     monthlyEmployeeReportLoading = false;
   }
 
-  // Segédfüggvény a summary-hoz
   function worklogsByMonthSummary(worklogs) {
     if (!worklogs) return { workdays: 0, plannedWorkdays: 0, totalOvertime: 0 };
     let workdays = worklogs.length;
@@ -764,7 +730,6 @@
     return { workdays, plannedWorkdays, totalOvertime };
   }
 
-  // Jogosultság ellenőrzés és adatlekérés csak böngészőben, onMount-ban!
   onMount(() => {
     if (!token || !userRole || userRole.toLowerCase() !== 'admin') {
       if (!token || !userRole) {
@@ -808,7 +773,6 @@
     return Number(val).toFixed(2).replace(/\.00$/, '');
   }
 
-  // --- Beosztás szerkesztése (PUT) változók ---
   let updateEmployeeId = '';
   let updateYear = '';
   let updateMonth = '';
@@ -834,7 +798,7 @@
       const body = JSON.stringify({
         scheduleId: 0,
         employeeId: Number(updateEmployeeId),
-        fullName: '', // Backend can fill in
+        fullName: '', 
         scheduledDate: `${updateYear}-${String(updateMonth).padStart(2, '0')}-${String(updateDay).padStart(2, '0')}`,
         startTime: updateStartTime ? updateStartTime : '00:00',
         endTime: updateEndTime ? updateEndTime : '00:00',
@@ -850,7 +814,6 @@
       });
       if (!response.ok) throw new Error('Hiba a beosztás módosításakor');
       updateScheduleSuccess = 'Beosztás sikeresen módosítva!';
-      // Optionally clear fields
     } catch (err) {
       updateScheduleError = err.message;
     } finally {
@@ -858,7 +821,6 @@
     }
   }
 
-  // --- Beosztás törlése (DELETE) változók ---
   let deleteEmployeeIdVar = '';
   let deleteYearVar = '';
   let deleteMonthVar = '';
@@ -891,7 +853,6 @@
     }
   }
 
-  // --- Beosztás törlés megerősítő modal ---
   let showDeleteScheduleConfirm = false;
   let pendingDeleteVars = { employeeId: '', year: '', month: '', day: '' };
 
@@ -914,7 +875,6 @@
     await deleteSchedule();
   }
 
-  // --- Checkpoint törlés megerősítő modal JAVÍTÁS ---
   let showDeleteCheckpointConfirm = false;
   let pendingDeleteCheckpointVars = { employeeId: '', checkpointId: '' };
 
@@ -949,7 +909,6 @@
 
 <section>
   {#if activeTab === 'checkpoint'}
-    <!-- Év és hónap szerint az összes Checkpoint lekérése: -->
     <div class="api-row api-row-column">
       <div class="api-description">Év és hónap szerint az összes Checkpoint lekérése:</div>
       <form class="api-action-form checkpoint-form-row" on:submit|preventDefault={() => fetchCheckpointsByMonth(selectedYear, selectedMonth)}>

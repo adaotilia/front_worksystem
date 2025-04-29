@@ -7,12 +7,11 @@
   import { browser } from '$app/environment';
   import { API_BASE } from '../../../config.js';
   import { authFetch } from '../../../authFetch.js';
-  
 
   const dispatch = createEventDispatcher();
   let token = '';
   let userRole = '';
-  
+
   let managerData = null;
   let error = '';
 
@@ -30,14 +29,12 @@
     { key: 'dashboard', label: 'Vezérlőpult' }
   ];
 
-  // Auth store szinkronizáció
   const unsubscribe = auth.subscribe((state) => {
     token = state.token;
     userRole = state.userRole;
   });
 
-   // Új változók a checkpoint lekérdezéshez
-   let selectedYear = '';
+  let selectedYear = '';
   let selectedMonth = '';
   let checkpoints = [];
   let checkpointsLoading = false;
@@ -55,35 +52,29 @@
   let checkpointsByEmployeeLoading = false;
   let checkpointsByEmployeeError = '';
 
-  // Új változók a státusz lekérdezéshez
   let statusEmployeeId = '';
-  let statusDate = new Date().toISOString().slice(0, 10); // Alapértelmezett: mai nap
+  let statusDate = new Date().toISOString().slice(0, 10); 
   let statusResult = null;
   let statusLoading = false;
   let statusError = '';
 
-  // Új változók a dolgozók lekérdezéséhez
   let employees = [];
   let employeesLoading = false;
   let employeesError = '';
 
-  // Új változó a dolgozók táblázat megjelenítéséhez
   let showEmployees = false;
 
-  // Új változók egy dolgozó lekérdezéséhez
   let singleEmployee = null;
   let singleEmployeeLoading = false;
   let singleEmployeeError = '';
   let singleEmployeeIdInput = '';
   let showSingleEmployee = false;
 
-  // Új: dolgozók lekérése szerep szerint
   let selectedRole = 'Employee';
   let employeesByRole = [];
   let employeesByRoleLoading = false;
   let employeesByRoleError = '';
 
-  // Új: felhasználónév szerinti lekérdezés
   let usernameInput = '';
   let userByUsername = null;
   let userByUsernameLoading = false;
@@ -109,7 +100,6 @@
     }
   }
 
-  // --- Havi munka tab változók ---
   let monthlyYear = '';
   let monthlyMonth = '';
   let monthlyReportData = null;
@@ -123,7 +113,6 @@
   let monthlyEmployeeReportLoading = false;
   let monthlyEmployeeReportError = '';
 
-  // --- Kimutatás tab változók ---
   let worklogDateYear = '';
   let worklogDateMonth = '';
   let worklogDateDay = '';
@@ -320,7 +309,6 @@
     worklogsByDateLoading = false;
   }
 
-  // Új: Beosztás lekérdezése dolgozó, év, hónap alapján (Manager)
   let scheduleEmployeeId = '';
   let scheduleEmployeeYear = '';
   let scheduleEmployeeMonth = '';
@@ -374,7 +362,6 @@
     return Number(val).toFixed(2).replace(/\.00$/, '');
   }
 
-  // Jelszó módosítás változók
   let employeeId = '';
   let oldPassword = '';
   let newPassword = '';
@@ -564,7 +551,6 @@
   {/if}
 
   {#if activeTab === 'monthly'}
-    <!-- Összes dolgozó havi riportja év/hónap szerint -->
     <div class="api-row api-row-column">
       <div class="api-description">Havi riport lekérdezése év és hónap szerint (összes dolgozó):</div>
       <form class="api-action-form form-inline-group" on:submit|preventDefault={fetchMonthlyReportByDate}>
@@ -630,7 +616,6 @@
       {/if}
     </div>
 
-    <!-- Egy dolgozó havi riportja év/hónap szerint -->
     <div class="api-row api-row-column">
       <div class="api-description">Havi riport lekérdezése dolgozó szerint:</div>
       <form class="api-action-form form-inline-group" on:submit|preventDefault={fetchMonthlyReportByEmployee}>
@@ -777,7 +762,6 @@
       {/if}
     </div>
 
-    <!-- Egy dolgozó havi kimutatása év/hónap szerint -->
     <div class="api-row api-row-column">
       <div class="api-description">Havi kimutatás dolgozó azonosító alapján</div>
       <form class="api-action-form form-inline-group" on:submit|preventDefault={fetchMonthlyReportByEmployee}>
@@ -857,7 +841,6 @@
       {/if}
     </div>
 
-    <!-- Dátum szerinti kimutatás -->
     <div class="api-row api-row-column">
       <div class="api-description">Dátum szerinti kimutatás</div>
       <form class="api-action-form form-inline-group" on:submit|preventDefault={() => fetchWorklogsByDate(worklogDateYear, worklogDateMonth, worklogDateDay)}>
