@@ -121,7 +121,6 @@
   let newFullName = '';
   let newUsername = '';
   let newPassword = '';
-  let selectedrRole = 'Employee';
   let addEmployeeLoading = false;
   let addEmployeeError = '';
   let addEmployeeSuccess = '';
