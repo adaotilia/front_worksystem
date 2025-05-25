@@ -165,6 +165,44 @@
     { value: 'Employee', label: 'Dolgozó' }
   ];
 
+
+  async function addEmployee() {
+    addEmployeeLoading = true;
+    addEmployeeError = '';
+    addEmployeeSuccess = '';
+  
+    try {
+      const response = await authFetch(`${API_BASE}/Admin/employees`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName: newFullName,
+          username: newUsername,
+          password: newPassword,
+          role: newUserRole
+        })
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Hiba történt a dolgozó hozzáadása során');
+      }
+  
+      const data = await response.json();
+      addEmployeeSuccess = `Sikeresen hozzáadva! Azonosító: ${data.id}`;
+      newFullName = '';
+      newUsername = '';
+      newPassword = '';
+      newUserRole = 'Employee';
+    } catch (err) {
+      console.error('Hiba a dolgozó hozzáadásakor:', err);
+      addEmployeeError = err.message || 'Ismeretlen hiba történt a dolgozó hozzáadása során';
+    } finally {
+      addEmployeeLoading = false;
+    }
+  }
   async function fetchEmployees() {
     employeesLoading = true;
     employeesError = '';
