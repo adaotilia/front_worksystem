@@ -1,16 +1,10 @@
 <script>
-  import { onMount } from 'svelte';
-  import { authFetch } from '../authFetch.js';
-  import { API_BASE } from '../config.js';
-
   export let fullName = '';
+  export let userRole = '';
   export let username = '';
   export let employeeId = '';
   export let sessionStatus = '';
 
-  let checkpointStatus = null;
-  let checkpointLoading = false;
-  let checkpointError = '';
 
   // Monogram generálása
   $: monogram =
@@ -19,37 +13,6 @@
       .map(n => n[0]?.toUpperCase() || '')
       .join('')
       .slice(0,2);
-
-  // Fetch checkpoint status when component mounts
-  onMount(async () => {
-    const today = new Date();
-    await checkCheckpointStatus(
-      today.getFullYear(),
-      today.getMonth() + 1, // Months are 0-indexed in JS
-      today.getDate()
-    );
-  });
-
-  async function checkCheckpointStatus(year, month, day) {
-    checkpointLoading = true;
-    checkpointError = '';
-    
-    try {
-      const response = await authFetch(`${API_BASE}/Employee/checkpoints/status/${year}/${month}/${day}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Hiba történt az állapot lekérdezése során');
-      }
-
-      checkpointStatus = await response.json();
-    } catch (err) {
-      console.error('Hiba az állapot lekérdezésekor:', err);
-      checkpointError = err.message || 'Ismeretlen hiba történt az állapot lekérdezése során';
-    } finally {
-      checkpointLoading = false;
-    }
-  }
 </script>
 
 <div class="profile-card">
@@ -58,19 +21,11 @@
     <div class="profile-name">{fullName}</div>
     <span class="profile-username">{username}</span>
     <div class="profile-employeeid">ID: {employeeId}</div>
+    <div class="profile-role">{userRole}</div>
     {#if sessionStatus}
       <div class="profile-status {sessionStatus === 'Active' ? 'status-active' : 'status-inactive'}">
         <span class="status-dot"></span>
         {sessionStatus === 'Active' ? 'Aktív' : 'Inaktív'}
-      </div>
-    {/if}
-    {#if checkpointLoading}
-      <div>Betöltés...</div>
-    {:else if checkpointError}
-      <div class="error">{checkpointError}</div>
-    {:else if checkpointStatus}
-      <div class="checkpoint-status">
-        Ma: {checkpointStatus.status || 'Nincs adat'}
       </div>
     {/if}
   </div>
@@ -124,6 +79,13 @@
     font-weight: 400;
     opacity: 0.85;
     margin-left: 0.2rem;
+  }
+  .profile-role {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--color-profile-role, #e0e0ff);
+    opacity: 0.95;
+    margin-top: 0.1rem;
   }
   .profile-status {
     display: block;
