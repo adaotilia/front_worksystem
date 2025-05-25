@@ -225,16 +225,49 @@
      const data = await response.json();
      addEmployeeSuccess = `Sikeresen hozzáadva! Azonosító: ${data.id}`;
      
-     // Clear form
      newFullName = '';
      newUsername = '';
      newPassword = '';
-     selectedRole = 'Employee'; // Changed from newUserRole to selectedRole
+     selectedRole = 'Employee'; 
    } catch (err) {
      console.error('Hiba a dolgozó hozzáadásakor:', err);
      addEmployeeError = err.message || 'Ismeretlen hiba történt a dolgozó hozzáadása során';
    } finally {
      addEmployeeLoading = false;
+   }
+ }
+
+ async function updateEmployeeUsername() {
+   updateUsernameLoading = true;
+   updateUsernameError = '';
+   updateUsernameSuccess = '';
+ 
+   try {
+     const response = await authFetch(`${API_BASE}/Admin/employees/update`, {
+       method: 'PUT',
+       headers: {
+         'Content-Type': 'application/json',
+       },
+       body: JSON.stringify({
+         employeeId: parseInt(updateUsernameId),
+         username: updateUsernameOld,
+         newUsername: updateUsernameNew
+       })
+     });
+ 
+     if (!response.ok) {
+       const errorData = await response.json();
+       throw new Error(errorData.message || 'Hiba történt a felhasználónév módosítása során');
+     }
+ 
+     updateUsernameSuccess = 'Sikeresen módosítva!';
+     updateUsernameOld = updateUsernameNew; 
+     updateUsernameNew = ''; 
+   } catch (err) {
+     console.error('Hiba a felhasználónév módosításakor:', err);
+     updateUsernameError = err.message || 'Ismeretlen hiba történt a felhasználónév módosítása során';
+   } finally {
+     updateUsernameLoading = false;
    }
  }
 
