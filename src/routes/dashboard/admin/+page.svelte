@@ -164,6 +164,37 @@
     { value: 'Employee', label: 'Dolgozó' }
   ];
 
+  async function updateEmployeeFullname() {
+    updateFullnameLoading = true;
+    updateFullnameError = '';
+    updateFullnameSuccess = '';
+  
+    try {
+      const response = await authFetch(`${API_BASE}/Admin/employees/${updateFullnameId}/fullname`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          newFullName: updateFullnameNew
+        })
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Hiba történt a név módosítása során');
+      }
+  
+      updateFullnameSuccess = 'Sikeresen módosítva!';
+      updateFullnameOld = updateFullnameNew; 
+      updateFullnameNew = ''; 
+    } catch (err) {
+      console.error('Hiba a név módosításakor:', err);
+      updateFullnameError = err.message || 'Ismeretlen hiba történt a név módosítása során';
+    } finally {
+      updateFullnameLoading = false;
+    }
+  }
 
  async function addEmployee() {
    addEmployeeLoading = true;
