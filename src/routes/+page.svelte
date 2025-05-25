@@ -4,6 +4,7 @@
   import { theme } from '../themeStore.js';
   import { handleBackendMessage } from '../messageHandler.js';
   import { authFetch } from '../authFetch.js';
+  import { API_BASE } from '../config.js';
 
   let loginOpen = false;
   let checkpointOpen = false;
@@ -23,7 +24,7 @@
     loginLoading = true;
 
     try {
-      const response = await fetch('/api/Auth/login', {
+      const response = await fetch(`${API_BASE}/Auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -62,13 +63,13 @@
   function handleStartWork() {
     checkpointMessage = '';
     checkpointMessageType = '';
-    fetchCheckpoint('/Checkpoint/start');
+    fetchCheckpoint(`${API_BASE}/Checkpoint/start`);
   }
 
   function handleEndWork() {
     checkpointMessage = '';
     checkpointMessageType = '';
-    fetchCheckpoint('/Checkpoint/end');
+    fetchCheckpoint(`${API_BASE}/Checkpoint/end`);
   }
 
   async function fetchCheckpoint(endpoint) {
