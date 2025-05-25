@@ -4,7 +4,6 @@
   import { API_BASE } from '../config'; // Adjust the import path as needed
 
   export let fullName = '';
-  export let userRole = '';
   export let username = '';
   export let employeeId = '';
   export let sessionStatus = '';
@@ -125,13 +124,6 @@
     font-weight: 400;
     opacity: 0.85;
     margin-left: 0.2rem;
-  }
-  .profile-role {
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: var(--color-profile-role, #e0e0ff);
-    opacity: 0.95;
-    margin-top: 0.1rem;
   }
   .profile-status {
     display: block;
