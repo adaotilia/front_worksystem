@@ -304,6 +304,38 @@
    }
  }
    
+async function updateEmployeeRole() {
+  updateRoleLoading = true;
+  updateRoleError = '';
+  updateRoleSuccess = '';
+
+  try {
+    const response = await authFetch(`${API_BASE}/Admin/employees/update`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        employeeId: parseInt(updateRoleId),
+        userRole: updateRoleNew
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Hiba történt a szerepkör módosítása során');
+    }
+
+    updateRoleSuccess = 'Sikeresen módosítva!';
+    updateRoleId = ''; 
+    updateRoleNew = 'Employee'; 
+  } catch (err) {
+    console.error('Hiba a szerepkör módosításakor:', err);
+    updateRoleError = err.message || 'Ismeretlen hiba történt a szerepkör módosítása során';
+  } finally {
+    updateRoleLoading = false;
+  }
+}
 
   async function fetchEmployees() {
     employeesLoading = true;
