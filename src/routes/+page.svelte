@@ -24,7 +24,7 @@
     loginLoading = true;
 
     try {
-      const response = await fetch(`${API_BASE}/Auth/login`, {
+      const response = await fetch(`${API_BASE}/api/Auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
