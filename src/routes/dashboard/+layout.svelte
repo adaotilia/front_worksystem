@@ -22,24 +22,38 @@
 
   async function fetchUserData(token, EmployeeId) {
     if (!token) return;
-    const userRes = await fetch(`${API_BASE}/Employee/employees/me`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+    
+    try {
+      const userRes = await fetch(`${API_BASE}/Employee/employees/me`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (userRes.ok) {
+        userData = await userRes.json();
+        EmployeeId = userData.EmployeeId || userData.employeeId || '';
       }
-    });
-    if (userRes.ok) {
-      userData = await userRes.json();
-      EmployeeId = userData.EmployeeId || userData.employeeId || '';
-    }
-    const statusRes = await fetch(`${API_BASE}/Employee/checkpoints/status/${year}/${month}/${day}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+  
+      const statusRes = await fetch(
+        `${API_BASE}/Employee/checkpoints/status/${year}/${month}/${day}`, 
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      
+      if (statusRes.ok) {
+        const status = await statusRes.text();
+        userStatus = status.replace(/"/g, '');
+        console.log('Státusz beállítva:', userStatus);
       }
-    });
-    if (statusRes.ok) {
-      userStatus = await statusRes.text();
+    } catch (error) {
+      console.error('Hiba történt:', error);
+      userStatus = 'Inactive';
     }
   }
 
