@@ -271,6 +271,40 @@
    }
  }
 
+ async function updateEmployeePassword() {
+   updatePasswordLoading = true;
+   updatePasswordError = '';
+   updatePasswordSuccess = '';
+ 
+   try {
+     const response = await authFetch(`${API_BASE}/Admin/employees/update`, {
+       method: 'PUT',
+       headers: {
+         'Content-Type': 'application/json',
+       },
+       body: JSON.stringify({
+         employeeId: parseInt(updatePasswordId),
+         username: updatePasswordUsername,
+         password: updatePasswordNew
+       })
+     });
+ 
+     if (!response.ok) {
+       const errorData = await response.json();
+       throw new Error(errorData.message || 'Hiba történt a jelszó módosítása során');
+     }
+ 
+     updatePasswordSuccess = 'Sikeresen módosítva!';
+     updatePasswordNew = ''; 
+   } catch (err) {
+     console.error('Hiba a jelszó módosításakor:', err);
+     updatePasswordError = err.message || 'Ismeretlen hiba történt a jelszó módosítása során';
+   } finally {
+     updatePasswordLoading = false;
+   }
+ }
+   
+
   async function fetchEmployees() {
     employeesLoading = true;
     employeesError = '';
