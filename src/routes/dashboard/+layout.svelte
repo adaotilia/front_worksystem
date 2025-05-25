@@ -57,7 +57,7 @@
         userRole={userData.userRole}
         username={userData.username}
         employeeId={userData.EmployeeId || userData.employeeId || ''}
-        sessionStatus={userStatus === 'Active' ? 'Aktív' : 'Inaktív'}
+        sessionStatus={userStatus}
       />
     {/if}
     {#if error}
