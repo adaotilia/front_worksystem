@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
-  import { authFetch } from '../utils/auth'; // Adjust the import path as needed
-  import { API_BASE } from '../config'; // Adjust the import path as needed
+  import { authFetch } from '../authFetch.js';
+  import { API_BASE } from '../config.js';
 
   export let fullName = '';
   export let username = '';
