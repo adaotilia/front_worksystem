@@ -204,31 +204,54 @@
    addEmployeeSuccess = '';
  
    try {
+     const requestBody = {
+       id: 0,
+       employeeId: 0,
+       fullName: newFullName,
+       username: newUsername,
+       password: newPassword,
+       userRole: selectedRole.toLowerCase(), 
+       newUsername: null,
+       newFullName: null
+     };
+
+     console.log('Sending request with body:', JSON.stringify(requestBody, null, 2));
+
      const response = await authFetch(`${API_BASE}/Admin/employees`, {
        method: 'POST',
        headers: {
          'Content-Type': 'application/json',
          'accept': '*/*'
        },
-       body: JSON.stringify({
-         id: 0,
-         employeeId: 0,
-         fullName: newFullName,
-         username: newUsername,
-         password: newPassword,
-         userRole: selectedRole,
-         newUsername: null,
-         newFullName: null
-       })
+       body: JSON.stringify(requestBody)
      });
- 
+
+     console.log('Response status:', response.status);
+     
      if (!response.ok) {
-       const errorData = await response.json();
-       throw new Error(errorData.message || 'Hiba történt a dolgozó hozzáadása során');
+       let errorData;
+       try {
+         errorData = await response.text();
+         console.error('Error response:', errorData);
+         try {
+           errorData = JSON.parse(errorData);
+         } catch (e) {
+           // If not JSON, keep as text
+         }
+       } catch (e) {
+         console.error('Error reading error response:', e);
+         errorData = 'Failed to read error response';
+       }
+       
+       throw new Error(errorData?.message || 
+                     errorData?.title || 
+                     `Hiba történt a dolgozó hozzáadása során (${response.status} ${response.statusText})`);
      }
- 
+
      const data = await response.json();
-     addEmployeeSuccess = `Sikeresen hozzáadva! Azonosító: ${data.id}`;
+     console.log('Success response:', data);
+     
+     addEmployeeSuccess = `Sikeresen hozzáadva! Azonosító: ${data.id || data.employeeId}`;
      
      newFullName = '';
      newUsername = '';
