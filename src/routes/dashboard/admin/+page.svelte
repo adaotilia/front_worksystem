@@ -208,12 +208,17 @@
        method: 'POST',
        headers: {
          'Content-Type': 'application/json',
+         'accept': '*/*'
        },
        body: JSON.stringify({
+         id: 0,
+         employeeId: 0,
          fullName: newFullName,
          username: newUsername,
          password: newPassword,
-         role: selectedRole  // Changed from newUserRole to selectedRole
+         userRole: selectedRole,
+         newUsername: null,
+         newFullName: null
        })
      });
  
